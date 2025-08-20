@@ -340,7 +340,7 @@ export class DriveStore {
       name: file.name,
       mime: file.type,
       size: file.size,
-      url: `/assets/${file.name}`,
+      url: `/assets/uploads/${file.name}`,
       createdAt: now,
       updatedAt: now,
     };
