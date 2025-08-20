@@ -1,0 +1,52 @@
+{
+  "users": [
+    { "id": 1, "name": "Alice", "email": "alice@example.com", "role": "admin" },
+    { "id": 2, "name": "Bledi", "email": "bledi@example.com", "role": "user" }
+  ],
+  "folders": [
+    {
+      "id": 10,
+      "userId": 1,
+      "name": "Invoices",
+      "parentId": 0,
+      "createdAt": "2025-08-01T09:10:00Z"
+    },
+    { "id": 11, "userId": 1, "name": "Design", "parentId": 0, "createdAt": "2025-08-01T09:20:00Z" },
+    { "id": 12, "userId": 1, "name": "2025", "parentId": 10, "createdAt": "2025-08-01T10:00:00Z" }
+  ],
+  "files": [
+    {
+      "id": 101,
+      "userId": 1,
+      "folderId": 10,
+      "name": "invoice-001.pdf",
+      "mime": "application/pdf",
+      "size": 102400,
+      "url": "/assets/uploads/invoice-001.pdf",
+      "createdAt": "2025-08-05T08:00:00Z",
+      "updatedAt": "2025-08-05T08:00:00Z"
+    },
+    {
+      "id": 102,
+      "userId": 1,
+      "folderId": 11,
+      "name": "logo.svg",
+      "mime": "image/svg+xml",
+      "size": 21024,
+      "url": "/assets/uploads/logo.svg",
+      "createdAt": "2025-08-05T09:00:00Z",
+      "updatedAt": "2025-08-05T09:00:00Z"
+    },
+    {
+      "id": 103,
+      "userId": 1,
+      "folderId": 0,
+      "name": "readme.txt",
+      "mime": "text/plain",
+      "size": 59,
+      "url": "/assets/uploads/readme.txt",
+      "createdAt": "2025-08-05T10:00:00Z",
+      "updatedAt": "2025-08-05T10:00:00Z"
+    }
+  ]
+}
