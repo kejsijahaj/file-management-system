@@ -1,0 +1,5 @@
+.tree { padding: 4px 0; }
+.node .row { display: flex; align-items: center; gap: 6px; padding: 2px 4px; }
+.node .name { cursor: pointer; }
+.node .name.active { font-weight: 600; }
+.node.file .row, .mat-tree-node.node.file { padding-left: 32px; }

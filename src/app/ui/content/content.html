@@ -1,1 +1,74 @@
-<p>content works!</p>
+<!-- Toolbar: breadcrumb + search + view toggle -->
+<section class="toolbar">
+  <nav class="breadcrumb">
+    <a [routerLink]="['/drive/folder', 0]">My Drive</a>
+    <ng-container *ngFor="let seg of path(); trackBy: trackById">
+      <span class="sep">/</span>
+      <a [routerLink]="['/drive/folder', seg.id]">{{ seg.name }}</a>
+    </ng-container>
+  </nav>
+
+  <div class="toolbar-right">
+    <input type="search" placeholder="Search files…" (input)="onSearch($event)">
+    <button mat-button (click)="store.viewMode.set('list')" [class.active]="store.viewMode() === 'list'">
+      <mat-icon>view_list</mat-icon>
+    </button>
+    <button mat-button (click)="store.viewMode.set('grid')" [class.active]="store.viewMode() === 'grid'">
+      <mat-icon>grid_view</mat-icon>
+    </button>
+  </div>
+</section>
+
+<!-- Loading / error -->
+<div class="status" *ngIf="store.loading()">Loading…</div>
+<div class="status error" *ngIf="store.error()">{{ store.error() }}</div>
+
+<!-- Content -->
+<section class="pane" *ngIf="!store.loading()">
+  <!-- Folders -->
+  <h4 *ngIf="folders().length">Folders</h4>
+
+  <div *ngIf="store.viewMode() === 'grid'; else folderList" class="folder-grid">
+    <button class="folder-card" *ngFor="let f of folders(); trackBy: trackById" (click)="openFolder(f.id)">
+      <mat-icon>folder</mat-icon>
+      <span class="name">{{ f.name }}</span>
+    </button>
+  </div>
+
+  <ng-template #folderList>
+    <ul class="folder-list">
+      <li *ngFor="let f of folders(); trackBy: trackById" (click)="openFolder(f.id)">
+        <mat-icon>folder</mat-icon>
+        <span class="name">{{ f.name }}</span>
+      </li>
+    </ul>
+  </ng-template>
+
+  <!-- Files -->
+  <h4 *ngIf="files().length">Files</h4>
+
+  <div *ngIf="store.viewMode() === 'grid'; else fileList" class="file-grid">
+    <div class="file-card" *ngFor="let f of files(); trackBy: trackById">
+      <div class="thumb">
+        <img *ngIf="isImage(f.mime)" [src]="f.url" [alt]="f.name" />
+        <object *ngIf="isPdf(f.mime)" [data]="safe(f.url)" type="application/pdf"></object>
+        <mat-icon *ngIf="!isImage(f.mime) && !isPdf(f.mime)">{{ iconFor(f.mime) }}</mat-icon>
+      </div>
+      <div class="meta">
+        <div class="name" [title]="f.name">{{ f.name }}</div>
+        <a [href]="f.url" download>Download</a>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #fileList>
+    <ul class="file-list">
+      <li *ngFor="let f of files(); trackBy: trackById">
+        <mat-icon>{{ iconFor(f.mime) }}</mat-icon>
+        <a [href]="f.url" target="_blank" rel="noopener">{{ f.name }}</a>
+      </li>
+    </ul>
+  </ng-template>
+
+  <p class="empty" *ngIf="!folders().length && !files().length">This folder is empty.</p>
+</section>
