@@ -1,0 +1,32 @@
+.wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.register-container {
+  width: 500px;
+  border: 1px solid #e0e0e0;   /* subtle border */
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06); /* optional soft shadow */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #fff;
+}
+
+mat-form-field {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+mat-error {
+  font-size: 12px;
+}
+
+.view-password {
+  border: none;
+  background: none;
+}
