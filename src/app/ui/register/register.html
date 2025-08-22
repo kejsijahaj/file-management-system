@@ -28,13 +28,7 @@
       </mat-form-field>
       <mat-form-field>
         <mat-label>Enter your password</mat-label>
-        <input
-          matInput
-          required
-          (blur)="updateErrorMessage()"
-          formControlName="password"
-          [type]="hide() ? 'password' : 'text'"
-        />
+        <input matInput required formControlName="password" [type]="hide() ? 'password' : 'text'" />
         <button
           matIconButton
           matSuffix
@@ -46,17 +40,18 @@
           <mat-icon>{{ hide() ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
       </mat-form-field>
-      <mat-form-field>
+      <!-- <mat-form-field>
         <mat-label>Confirm password</mat-label>
         <input
           matInput
           required
+          passwordMatchValidator
           formControlName="confirmPassword"
+          (blur)="updateErrorMessage()"
           [type]="hide() ? 'password' : 'text'"
         />
-        @if (form.hasError('passwordMismatch') && (confirmPassword.dirty ||
-        confirmPassword.touched)) {
-        <mat-error> Passwords should match. </mat-error>
+        @if (form.hasError('passwordMismatch') && confirmPassword.touched) {
+        <mat-error> Passwords should match! </mat-error>
         }
         <button
           matIconButton
@@ -68,12 +63,12 @@
         >
           <mat-icon>{{ hide() ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
-      </mat-form-field>
+      </mat-form-field> -->
 
       <button
         matButton="elevated"
         type="submit"
-        [disabled]="email.invalid && password.invalid && confirmPassword.invalid"
+        [disabled]="email.invalid && password.invalid"
       >
         Register
       </button>

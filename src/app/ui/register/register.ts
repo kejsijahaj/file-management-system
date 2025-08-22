@@ -1,14 +1,17 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, inject} from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButton } from '@angular/material/button';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
-import { RouterLink } from '@angular/router';
-import { passwordMatchValidator } from '../../shared/services/password-match';
+import { Router, RouterLink } from '@angular/router';
+// import { passwordMatchValidator } from '../../shared/services/password-match';
+import { AuthService } from '../../core/auth/auth-service';
+import { User } from '../../shared/models/user-model';
 
 @Component({
   selector: 'app-register',
@@ -28,15 +31,20 @@ export class Register {
   protected readonly value = signal('');
   errorMessage = signal('');
   hide = signal(true);
+  auth = inject(AuthService);
+  snackBar = inject(MatSnackBar);
+  router = inject(Router);
 
   readonly form = new FormGroup(
     {
       username: new FormControl('', [Validators.required, Validators.pattern('^[a-zA-Z0-9]+$')]),
       password: new FormControl('', [Validators.required]),
-      confirmPassword: new FormControl('', [Validators.required]),
+      // confirmPassword: new FormControl('', [Validators.required]),
       email: new FormControl('', [Validators.required, Validators.email]),
     },
-    { validators: passwordMatchValidator }
+    // {
+    //   validators: passwordMatchValidator()
+    // }
   );
 
   get username() {
@@ -51,9 +59,9 @@ export class Register {
     return this.form.get('password')!;
   }
 
-  get confirmPassword() {
-    return this.form.get('confirmPassword')!;
-  }
+  // get confirmPassword() {
+  //   return this.form.get('confirmPassword')!;
+  // }
 
   constructor() {
     merge(this.email.statusChanges, this.email.valueChanges)
@@ -80,7 +88,22 @@ export class Register {
 
   submit() {
     if (this.form.valid) {
-      // Handle successful registration
+      const postData = { ...this.form.value};
+      this.auth.registerUser(postData as User).subscribe(
+        response => {
+          console.log('User registered successfully', response);
+          this.snackBar.open('User registered successfully', '', {
+            duration: 1000,
+          });
+          this.router.navigate(['/login']);
+        },
+        error => {
+          console.error('Error registering user', error);
+          this.snackBar.open('Error registering user', '', {
+            duration: 1000,
+          });
+        }
+      )
     } else {
       this.form.markAllAsTouched();
     }

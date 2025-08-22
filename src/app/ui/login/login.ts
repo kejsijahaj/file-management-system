@@ -1,12 +1,14 @@
-import { Component, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, inject, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth/auth-service';
 
 @Component({
   selector: 'app-login',
@@ -16,7 +18,7 @@ import { RouterLink } from '@angular/router';
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
-    RouterLink,
+    RouterLink
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss',
@@ -24,8 +26,24 @@ import { RouterLink } from '@angular/router';
 export class Login {
   hide = signal(true);
   errorMessage = signal('');
-  readonly email = new FormControl('', [Validators.required, Validators.email]);
-  readonly password = new FormControl('', [Validators.required]);
+  auth = inject(AuthService);
+  snackbar = inject(MatSnackBar);
+  router = inject(Router)
+
+  readonly form = new FormGroup(
+    {
+      password: new FormControl('', [Validators.required]),
+      email: new FormControl('', [Validators.required, Validators.email]),
+    }
+  );
+
+  get email() {
+    return this.form.get('email')!;
+  }
+
+  get password() {
+    return this.form.get('password')!;
+  }
 
   constructor() {
     merge(this.email.statusChanges, this.email.valueChanges)
@@ -46,5 +64,23 @@ export class Login {
     } else {
       this.errorMessage.set('');
     }
+  }
+
+  loginUser() {
+    const { email, password } = this.form.value;
+    this.auth.getUserByEmail(email as string).subscribe(
+      response => {
+        if(response.length > 0 && response[0].password === password) {
+          this.snackbar.open('Login successful', '', {
+            duration: 1000,
+          });
+          this.router.navigate(['/home']);
+        } else {
+          this.snackbar.open('Login failed', '', {
+            duration: 1000,
+          });
+        }
+      }
+    )
   }
 }

@@ -1,41 +1,41 @@
 <div class="wrapper">
-    <form>
-  <div class="login-container">
-    <h2>Login</h2>
-    <mat-form-field>
-    <mat-label>Enter your email</mat-label>
-    <input
-      matInput
-      placeholder="name@example.com"
-      [formControl]="email"
-      (blur)="updateErrorMessage()"
-      required
-    />
-    @if (email.invalid) {
-      <mat-error>{{errorMessage()}}</mat-error>
-    }
-  </mat-form-field>
+  <form [formGroup]="form" (ngSubmit)="loginUser()">
+    <div class="login-container">
+      <h2>Login</h2>
+      <mat-form-field>
+        <mat-label>Enter your email</mat-label>
+        <input
+          matInput
+          placeholder="name@example.com"
+          formControlName="email"
+          (blur)="updateErrorMessage()"
+          required
+        />
+        @if (email.invalid) {
+        <mat-error>{{ errorMessage() }}</mat-error>
+        }
+      </mat-form-field>
 
-    <mat-form-field>
-    <mat-label>Enter your password</mat-label>
-    <input matInput [type]="hide() ? 'password' : 'text'" />
-    <button
-      matIconButton
-      matSuffix
-      class="view-password"
-      (click)="clickEvent($event)"
-      [attr.aria-label]="'Hide password'"
-      [attr.aria-pressed]="hide()"
-    >
-      <mat-icon>{{hide() ? 'visibility_off' : 'visibility'}}</mat-icon>
-    </button>
-  </mat-form-field>
+      <mat-form-field>
+        <mat-label>Enter your password</mat-label>
+        <input matInput [type]="hide() ? 'password' : 'text'" formControlName="password"/>
+        <button
+          matIconButton
+          matSuffix
+          class="view-password"
+          (click)="clickEvent($event)"
+          [attr.aria-label]="'Hide password'"
+          [attr.aria-pressed]="hide()"
+        >
+          <mat-icon>{{ hide() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+      </mat-form-field>
 
-    <button matButton="elevated" type="submit" [disabled]="email.invalid && password.invalid">Login</button>
+      <button matButton="elevated" type="submit" [disabled]="email.invalid && password.invalid">
+        Login
+      </button>
 
-    <div>
-    Don't have an account? <a routerLink="/register">Register here</a>
+      <div>Don't have an account? <a routerLink="/register">Register here</a></div>
     </div>
-  </div>
-</form>
+  </form>
 </div>
