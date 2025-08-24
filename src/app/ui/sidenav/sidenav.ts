@@ -16,7 +16,7 @@ interface TreeNode {
   name: string;
   type: NodeType;
   mime?: string;
-  children?:TreeNode[]
+  children?: TreeNode[];
   hasChildren?: boolean;
   loaded?: boolean;
   loading?: boolean;
@@ -26,19 +26,25 @@ interface TreeNode {
   selector: 'app-sidenav',
   imports: [MatButtonModule, MatTreeModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './sidenav.html',
-  styleUrl: './sidenav.scss'
+  styleUrl: './sidenav.scss',
 })
 export class Sidenav {
   private api = inject(ApiService);
   store = inject(DriveStore);
   private router = inject(Router);
 
-  data: TreeNode[] = [{
-    id: 0, name: 'My Drive', type: 'folder', children: [], loaded: false
-  }];
+  data: TreeNode[] = [
+    {
+      id: 0,
+      name: 'My Drive',
+      type: 'folder',
+      children: [],
+      loaded: false,
+    },
+  ];
 
-  childrenOf = (n: TreeNode) => n.children ?? [];
-  trackByNode: TrackByFunction<TreeNode> = (_index, node) => node.id;
+  childrenOf = (n: TreeNode) => (n.type === 'folder' ? n.children ?? [] : []);
+  trackByNode: TrackByFunction<TreeNode> = (_i, node) => `${node.type}:${node.id}`;
 
   isFolder = (_: number, n: TreeNode) => n.type === 'folder';
   isFile = (_: number, n: TreeNode) => n.type === 'file';
@@ -57,11 +63,11 @@ export class Sidenav {
     const next = new Set(this.expandedIds());
     const wantOpen = forceOpen ?? !next.has(node.id);
 
-    if(wantOpen && !node.loaded) {
+    if (wantOpen && !node.loaded) {
       await this.loadChildren(node);
     }
 
-    if(wantOpen) next.add(node.id);
+    if (wantOpen) next.add(node.id);
     else next.delete(node.id);
 
     this.expandedIds.set(next);
@@ -69,20 +75,39 @@ export class Sidenav {
   }
 
   async loadChildren(node: TreeNode) {
-    node.loading = true; this.refresh()
+    node.loading = true;
+    this.refresh();
     try {
       const uid = this.store.userId();
       const [folders, files] = await Promise.all([
         this.api.listChildrenFolders(uid, node.id),
-        this.api.listFilesInFolder(uid, node.id)
+        this.api.listFilesInFolder(uid, node.id),
       ]);
 
+      console.table(folders, ['id', 'name']);
+      console.table(files, ['id', 'name', 'mime']);
+
       node.children = [
-        ...folders.map(f => ({id: f.id, name: f.name, type: 'folder' as const, children: []})),
-        ...files.map(f => ({id: f.id, name: f.name, type: 'file' as const, mime: f.mime}))
+        ...folders.map((f) => ({
+          id: f.id,
+          name: f.name,
+          type: 'folder' as const,
+          children: [],
+          loaded: false,
+        })),
+        ...files.map((f) => ({
+          id: f.id,
+          name: f.name,
+          type: 'file' as const,
+          mime: f.mime,
+        })),
       ];
 
+      console.log('Assigned children for node', node.id, node.children);
       node.loaded = true;
+    } catch (e) {
+      console.error('loadChildren failed for node', node.id, e);
+      node.children ??= [];
     } finally {
       node.loading = false;
       this.refresh();
@@ -90,7 +115,7 @@ export class Sidenav {
   }
 
   async open(node: TreeNode) {
-    if(node.type === 'folder') {
+    if (node.type === 'folder') {
       await this.router.navigate(['/drive/folder', node.id]);
       await this.store.load(node.id);
     } else {
