@@ -74,7 +74,12 @@ export class Login {
           this.snackbar.open('Login successful', '', {
             duration: 1000,
           });
+          this.auth.setUser(response[0]);
           this.router.navigate(['/home']);
+        } else if (response.length > 0 && response[0].password !== password) {
+          this.snackbar.open('Incorrect password', '', {
+            duration: 1000,
+          });
         } else {
           this.snackbar.open('Login failed', '', {
             duration: 1000,

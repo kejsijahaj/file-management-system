@@ -14,11 +14,32 @@ header {
 
 .username-display {
     padding: 5px;
+    font-size: 16px;
+}
+
+.user-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .user-icon {
     color: var(--mat-sys-on-surface);
     width: 1em;
     height: 1em;
-    font-size: 30px;
+    font-size: 35px;
+}
+
+::ng-deep .user-menu .mat-mdc-menu-content {
+  padding: 0.25rem 0;
+}
+
+::ng-deep .user-menu .mat-mdc-menu-item {
+  min-height: 36px;
+  font-size: 0.85rem;
+  padding: 0 12px;
+}
+
+::ng-deep .user-menu .mat-icon {
+  font-size: 18px;
 }
