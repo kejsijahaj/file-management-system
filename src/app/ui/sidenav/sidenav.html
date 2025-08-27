@@ -1,4 +1,4 @@
-<mat-tree [dataSource]="data" [childrenAccessor]="childrenOf" [trackBy]="trackByNode" class="tree">
+<mat-tree [dataSource]="data()" [childrenAccessor]="childrenOf" [trackBy]="trackByNode" class="tree">
   <!-- file -->
       <!-- @if(node.children.length > 0){ -->
   <mat-nested-tree-node
@@ -18,10 +18,11 @@
        *matTreeNodeDef="let node; when: isFolder"
        class="node folder"
        [isExpandable]="true"
-       [isExpanded]="expanded(node)"
+       [isExpanded]="node.id === 0 || expanded(node)"
      >
        <div class="row">
          <button mat-icon-button (click)="toggle(node)">
+          <!--   -->
            <mat-icon class="mat-icon-mirror">{{
              expanded(node) ? 'expand_more' : 'chevron_right'
            }}</mat-icon>
