@@ -6,7 +6,7 @@ import { Home } from './ui/home/home';
 
 export const routes: Routes = [
     {path: '', pathMatch: 'full', redirectTo: 'login'},
-    // { path: 'drive/folder/:id', component: Content},
+    // { path: 'drive/folder/:id', component: Home },
     // { path: '**', redirectTo: 'drive/folder/0'}, // no data found component
     { path: 'login', component: Login },
     { path: 'register', component: Register },

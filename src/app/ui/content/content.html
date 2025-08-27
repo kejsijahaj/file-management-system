@@ -1,6 +1,5 @@
 <section class="toolbar">
   <nav class="breadcrumb">
-    <a [routerLink]="['/drive/folder', 0]">My Drive</a>
     <ng-container *ngFor="let seg of path(); trackBy: trackById">
       <span class="sep">/</span>
       <a [routerLink]="['/drive/folder', seg.id]">{{ seg.name }}</a>

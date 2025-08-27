@@ -52,8 +52,9 @@ export class Sidenav {
   private expandedIds = signal(new Set<number>());
   expanded = (n: TreeNode) => this.expandedIds().has(n.id);
 
-  async ngOnInit() {
-    await this.loadChildren(this.data[0]);
+
+  ngOnInit() {
+    this.loadChildren(this.data[0]);
     this.toggle(this.data[0], true);
   }
 
@@ -84,9 +85,12 @@ export class Sidenav {
         this.api.listFilesInFolder(uid, node.id),
       ]);
 
-      console.table(folders, ['id', 'name']);
-      console.table(files, ['id', 'name', 'mime']);
+      console.log({folders})
 
+      // console.table(folders, ['id', 'name']);
+      // console.table(files, ['id', 'name', 'mime']);
+
+      console.log({node})
       node.children = [
         ...folders.map((f) => ({
           id: f.id,
@@ -100,6 +104,7 @@ export class Sidenav {
           name: f.name,
           type: 'file' as const,
           mime: f.mime,
+          
         })),
       ];
 
