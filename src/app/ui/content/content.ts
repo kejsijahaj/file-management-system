@@ -1,6 +1,6 @@
 import { Component, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,7 +17,6 @@ type ViewMode = 'list' | 'grid';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     MatIconModule,
     MatButtonModule,
     MatFormFieldModule,
