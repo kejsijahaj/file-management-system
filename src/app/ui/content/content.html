@@ -1,4 +1,11 @@
-<section class="toolbar">
+<div class="parent">
+<div class="div1"> breadcrumb </div>
+<div class="div2"> searchbar </div>
+<div class="div3"> view mode </div>
+<div class="div4"> content </div>
+</div>
+
+<!-- <section class="toolbar">
   <nav class="breadcrumb">
     <ng-container *ngFor="let seg of path(); trackBy: trackById">
       <span class="sep">/</span>
@@ -17,13 +24,13 @@
   </div>
 </section>
 
-<!-- Loading / error -->
+
 <div class="status" *ngIf="store.loading()">Loading…</div>
 <div class="status error" *ngIf="store.error()">{{ store.error() }}</div>
 
-<!-- Content -->
+
 <section class="pane" *ngIf="!store.loading()">
-  <!-- Folders -->
+
   <h4 *ngIf="folders().length">Folders</h4>
 
   <div *ngIf="store.viewMode() === 'grid'; else folderList" class="folder-grid">
@@ -42,7 +49,7 @@
     </ul>
   </ng-template>
 
-  <!-- Files -->
+
   <h4 *ngIf="files().length">Files</h4>
 
   <div *ngIf="store.viewMode() === 'grid'; else fileList" class="file-grid">
@@ -69,4 +76,4 @@
   </ng-template>
 
   <p class="empty" *ngIf="!folders().length && !files().length">This folder is empty.</p>
-</section>
+</section> -->
