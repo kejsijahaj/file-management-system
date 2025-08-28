@@ -1,13 +1,54 @@
-mat-nested-tree-node > .mat-tree-node,
-.mat-tree-node {
-  display: flex;
-  align-items: center;
-  min-height: 28px; 
+.tree {
+  padding: 4px 0 8px;
 }
 
-.tree { padding: 4px 0; }
-.node .row { display: flex; align-items: center; gap: 6px; padding: 2px 4px; }
-.node .name { cursor: pointer; }
-.node .name.active { font-weight: 600; }
-.node.file .row, .mat-tree-node.node.file { padding-left: 32px; }
-.mat-nested-tree-node.node.file .row { min-height: 28px; }
+.sidenav-toolbar {
+  padding: 4px 4px 0;
+}
+
+.node-row {
+  display: block;
+  min-height: 28px;
+}
+
+.folder-btn,
+.file-btn {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 30px;
+  line-height: 1.3;
+  color: black;
+}
+
+.folder-btn .chev {
+  width: 20px;
+}
+
+.file-btn .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chev-spacer {
+  display: inline-block;
+  width: 20px;
+}
+
+.children {
+  margin-left: 20px;
+}
+
+.root-children {
+  margin-left: 0;
+}
+
+.loading, .empty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 12px;
+  padding: 2px 8px;
+}

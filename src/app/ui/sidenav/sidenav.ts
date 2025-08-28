@@ -1,127 +1,162 @@
-import { Component, computed, effect, inject, linkedSignal, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { TrackByFunction } from '@angular/core';
-import { MatTreeModule } from '@angular/material/tree';
-import { MatIconModule } from '@angular/material/icon';
+
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { ApiService } from '../../core/api/api-service';
 import { DriveStore } from '../../features/drive/state/drive-store';
-import { BehaviorSubject, forkJoin, switchMap } from 'rxjs';
-import {toSignal} from "@angular/core/rxjs-interop"
 
 type NodeType = 'folder' | 'file';
 
-interface TreeNode {
-  id: number;
+interface NodeItem {
+  id: string;
   name: string;
   type: NodeType;
   mime?: string;
-  children?: TreeNode[];
-  hasChildren?: boolean;
+  children?: NodeItem[];
   loaded?: boolean;
   loading?: boolean;
+  error?: string;
 }
 
 @Component({
   selector: 'app-sidenav',
-  imports: [MatButtonModule, MatTreeModule, MatIconModule, MatProgressSpinnerModule],
+  standalone: true,
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './sidenav.html',
   styleUrl: './sidenav.scss',
 })
 export class Sidenav {
   private api = inject(ApiService);
-  store = inject(DriveStore);
   private router = inject(Router);
+  store = inject(DriveStore);
 
-  readonly #getData = new BehaviorSubject<void>(undefined);
-  readonly #data$ = this.#getData.asObservable().pipe(switchMap(() => {
-    return forkJoin([
-        this.api.listChildrenFolders(this.store.userId(), 0),
-        this.api.listFilesInFolder(this.store.userId(), 0),
-      ])
-  }))
-  readonly #data = toSignal(this.#data$)
-
-  private expandedIds = signal(new Set<number>([0]));
-
-
-  protected readonly data = linkedSignal<TreeNode[]>(() => {
-    const folders: TreeNode[] = (this.#data()?.[0] ?? []).map(f => ({id: f.id,
-        name: f.name,
-        type: 'folder' as const,
-        children: <TreeNode[]>[],
-        loaded: false,}))
-    const files: TreeNode[] = (this.#data()?.[1] ?? []).map(f => ({
-          id: f.id,
-          name: f.name,
-          type: 'file' as const,
-          mime: f.mime,
-        }))
-    
-
-    return [
-    {
-      id: 0,
-      name: 'My Drive',
-      type: 'folder',
-      children: [...folders, ...files],
-              // loaded: false,
-    },
-  ]
+  root = signal<NodeItem>({
+    id: '0',
+    name: 'My Drive',
+    type: 'folder',
+    children: [],
+    loaded: false,
+    loading: false,
   });
-  nodesEff = effect(() => console.log(`nodes chnged ${JSON.stringify(this.data())}`))
 
-  childrenOf = (n: TreeNode) => (n.type === 'folder' ? n.children ?? [] : []);
-  trackByNode: TrackByFunction<TreeNode> = (_i, node) => `${node.type}:${node.id}`;
+  expanded = signal(new Set<string>());
 
-  isFolder = (_: number, n: TreeNode) => n.type === 'folder';
-  isFile = (_: number, n: TreeNode) => n.type === 'file';
-
-  expanded = (n: TreeNode) => this.expandedIds().has(n.id);
-
-
-  ngOnInit() {
-    // this.loadChildren(this.data()[0]);
-    // this.toggle(this.data()[0], true);
+  // ---------------- lifecycle ----------------
+  async ngOnInit() {
+    await this.loadFolderById(this.root().id);
+    this.setExpanded(this.root().id, true);
   }
 
-  toggle(node: TreeNode, forceOpen?: boolean) {
-    // if (node.type !== 'folder') return;
-
-    // const next = new Set(this.expandedIds());
-    // const wantOpen = forceOpen ?? !next.has(node.id);
-
-    // if (wantOpen && !node.loaded) {
-    //   // await this.loadChildren(node);
-    //   this.#getData.next()
-    // }
-
-    // if (wantOpen) next.add(node.id);
-    // else next.delete(node.id);
-
-    // this.expandedIds.set(next);
-    // // this.refresh();
-    // this.data.update(n => [...n])
-
-      if (node.type !== 'folder') return;
-  const next = new Set(this.expandedIds());
-  if (next.has(node.id)) next.delete(node.id);
-  else next.add(node.id);
-  this.expandedIds.set(next);
+  // ---------------- UI ----------------
+  async toggle(node: NodeItem) {
+    if (node.type !== 'folder') return;
+    const open = this.isExpanded(node.id);
+    if (!open) {
+      const current = this.findNodeById(this.root(), node.id);
+      if (current && !current.loaded) {
+        await this.loadFolderById(node.id);
+      }
+    }
+    this.setExpanded(node.id, !open);
   }
 
-  async open(node: TreeNode) {
+  async open(node: NodeItem) {
     if (node.type === 'folder') {
       await this.router.navigate(['/drive/folder', node.id]);
-      await this.store.load(node.id);
-    } else {
-      // show preview
+      await this.store.load(Number(node.id));
+      return;
+    }
+    // TODO: file preview / download
+  }
+
+  // ---------------- data loading ----------------
+  private async loadFolderById(id: string) {
+    this.mutateNode(id, (n) => {
+      if (n.type !== 'folder') return;
+      if (n.loading) return;
+      n.loading = true;
+      n.error = undefined;
+    });
+
+    try {
+      const uid = Number(this.store.userId());
+      const parent = Number(id);
+
+      const [folders, files] = await Promise.all([
+        this.api.listChildrenFolders(uid, parent),
+        this.api.listFilesInFolder(uid, parent),
+      ]);
+
+      this.mutateNode(id, (n) => {
+        if (n.type !== 'folder') return;
+        n.children = [
+          ...folders.map((f: any) => ({
+            id: String(f.id),
+            name: f.name,
+            type: 'folder' as const,
+            children: [],
+            loaded: false,
+            loading: false,
+          })),
+          ...files.map((f: any) => ({
+            id: String(f.id),
+            name: f.name,
+            type: 'file' as const,
+            mime: f.mime,
+          })),
+        ];
+        n.loaded = true;
+      });
+    } catch (err: any) {
+      this.mutateNode(id, (n) => {
+        if (n.type !== 'folder') return;
+        n.children = n.children ?? [];
+        n.loaded = true;
+        n.error = err?.message ?? 'Failed to load';
+      });
+    } finally {
+      this.mutateNode(id, (n) => {
+        if (n.type !== 'folder') return;
+        n.loading = false;
+      });
     }
   }
 
-  // private refresh() {
-  //   // this.data() = [...this.data()];
-  // }
+  // ---------------- helpers ----------------
+  isExpanded = (id: string | number) => this.expanded().has(String(id));
+
+  private setExpanded(id: string | number, open: boolean) {
+    const next = new Set(this.expanded());
+    open ? next.add(String(id)) : next.delete(String(id));
+    this.expanded.set(next);
+  }
+
+  private bump() {
+    this.root.set({ ...this.root() });
+  }
+
+  private findNodeById(root: NodeItem, id: string): NodeItem | null {
+    if (root.id === id) return root;
+    const kids = root.children ?? [];
+    for (const c of kids) {
+      if (c.id === id) return c;
+      if (c.type === 'folder') {
+        const hit = this.findNodeById(c, id);
+        if (hit) return hit;
+      }
+    }
+    return null;
+  }
+
+  private mutateNode(id: string, fn: (n: NodeItem) => void) {
+    const current = this.root();
+    const node = this.findNodeById(current, id);
+    if (!node) return;
+    fn(node);
+    this.root.set({ ...current });
+  }
 }
