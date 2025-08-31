@@ -9,21 +9,21 @@
   ],
   "folders": [
     {
-      "id": "10",
+      "id": 10,
       "userId": 1,
       "name": "Invoices",
       "parentId": 0,
       "createdAt": "2025-08-01T09:10:00Z"
     },
     {
-      "id": "11",
+      "id": 11,
       "userId": 1,
       "name": "Design",
       "parentId": 0,
       "createdAt": "2025-08-01T09:20:00Z"
     },
     {
-      "id": "12",
+      "id": 12,
       "userId": 1,
       "name": "2025",
       "parentId": 10,
@@ -32,7 +32,7 @@
   ],
   "files": [
     {
-      "id": "101",
+      "id": 101,
       "userId": 1,
       "folderId": 10,
       "name": "invoice-001.pdf",
@@ -43,7 +43,7 @@
       "updatedAt": "2025-08-05T08:00:00Z"
     },
     {
-      "id": "102",
+      "id": 102,
       "userId": 1,
       "folderId": 11,
       "name": "logo.svg",
@@ -54,7 +54,7 @@
       "updatedAt": "2025-08-05T09:00:00Z"
     },
     {
-      "id": "103",
+      "id": 103,
       "userId": 1,
       "folderId": 0,
       "name": "readme.txt",

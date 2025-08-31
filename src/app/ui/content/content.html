@@ -1,79 +1,114 @@
 <div class="parent">
-<div class="div1"> breadcrumb </div>
-<div class="div2"> searchbar </div>
-<div class="div3"> view mode </div>
-<div class="div4"> content </div>
-</div>
-
-<!-- <section class="toolbar">
-  <nav class="breadcrumb">
-    <ng-container *ngFor="let seg of path(); trackBy: trackById">
-      <span class="sep">/</span>
-      <a [routerLink]="['/drive/folder', seg.id]">{{ seg.name }}</a>
-    </ng-container>
+  <!-- breadcrumb -->
+  <nav class="breadcrumb-div breadcrumb" aria-label="Breadcrumb">
+    <a [routerLink]="['/drive/folder', 0]">My Drive</a>
+    @for (seg of breadcrumb(); track seg.id; let last = $last) {
+    <span class="sep">/</span>
+    @if (last) {
+    <span class="current">{{ seg.name }}</span>
+    } @else {
+    <a [routerLink]="['/drive/folder', seg.id]">{{ seg.name }}</a>
+    } }
   </nav>
 
-  <div class="toolbar-right">
-    <input type="search" placeholder="Search files…" (input)="onSearch($event)">
-    <button mat-button (click)="store.viewMode.set('list')" [class.active]="store.viewMode() === 'list'">
+  <!-- search -->
+  <div class="search-div toolbar-right">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput type="search" placeholder="Search files…" (input)="onSearch($event)" />
+      @if (query()) {
+      <button mat-icon-button matSuffix (click)="clearSearch()" aria-label="Clear">
+        <mat-icon>close</mat-icon>
+      </button>
+      }
+    </mat-form-field>
+  </div>
+
+  <!-- view toggle -->
+  <div class="view-div toolbar-right" role="group" aria-label="View mode">
+    <button
+      mat-icon-button
+      [class.active]="viewMode() === 'list'"
+      (click)="setView('list')"
+      aria-label="List"
+    >
       <mat-icon>view_list</mat-icon>
     </button>
-    <button mat-button (click)="store.viewMode.set('grid')" [class.active]="store.viewMode() === 'grid'">
+    <button
+      mat-icon-button
+      [class.active]="viewMode() === 'grid'"
+      (click)="setView('grid')"
+      aria-label="Grid"
+    >
       <mat-icon>grid_view</mat-icon>
     </button>
   </div>
-</section>
 
-
-<div class="status" *ngIf="store.loading()">Loading…</div>
-<div class="status error" *ngIf="store.error()">{{ store.error() }}</div>
-
-
-<section class="pane" *ngIf="!store.loading()">
-
-  <h4 *ngIf="folders().length">Folders</h4>
-
-  <div *ngIf="store.viewMode() === 'grid'; else folderList" class="folder-grid">
-    <button class="folder-card" *ngFor="let f of folders(); trackBy: trackById" (click)="openFolder(f.id)">
-      <mat-icon>folder</mat-icon>
-      <span class="name">{{ f.name }}</span>
-    </button>
-  </div>
-
-  <ng-template #folderList>
+  <!-- content -->
+  <section class="content-div pane" aria-live="polite">
+    @if (loading()) {
+    <div class="status">Loading…</div>
+    } @if (error()) {
+    <div class="status error">{{ error() }}</div>
+    } @if (folders().length) {
+    <h4>Folders</h4>
+    } @if (viewMode() === 'grid') {
+    <div class="folder-grid">
+      @for (f of folders(); track f.id) {
+      <button
+        type="button"
+        class="folder-card"
+        (click)="openFolder(f.id)"
+      >
+        <mat-icon>folder</mat-icon>
+        <span class="name">{{ f.name }}</span>
+      </button>
+      }
+    </div>
+    } @else {
     <ul class="folder-list">
-      <li *ngFor="let f of folders(); trackBy: trackById" (click)="openFolder(f.id)">
+      @for (f of folders(); track f.id) {
+      <li
+        role="button"
+        tabindex="0"
+        (click)="openFolder(f.id)"
+        (keydown.enter)="openFolder(f.id)"
+        (keydown.space)="openFolder(f.id)"
+      >
         <mat-icon>folder</mat-icon>
         <span class="name">{{ f.name }}</span>
       </li>
+      }
     </ul>
-  </ng-template>
-
-
-  <h4 *ngIf="files().length">Files</h4>
-
-  <div *ngIf="store.viewMode() === 'grid'; else fileList" class="file-grid">
-    <div class="file-card" *ngFor="let f of files(); trackBy: trackById">
-      <div class="thumb">
-        <img *ngIf="isImage(f.mime)" [src]="f.url" [alt]="f.name" />
-        <object *ngIf="isPdf(f.mime)" [data]="safe(f.url)" type="application/pdf"></object>
-        <mat-icon *ngIf="!isImage(f.mime) && !isPdf(f.mime)">{{ iconFor(f.mime) }}</mat-icon>
+    } @if (files().length) {
+    <h4>Files</h4>
+    } @if (viewMode() === 'grid') {
+    <div class="file-grid">
+      @for (f of files(); track f.id) {
+      <div class="file-card">
+        <div class="thumb">
+          @if (isImage(f.mime)) { <img [src]="f.url" [alt]="f.name" /> } @else if (isPdf(f.mime)) {
+          <object [data]="safe(f.url)" type="application/pdf"></object> } @else {
+          <mat-icon>insert_drive_file</mat-icon> }
+        </div>
+        <div class="meta">
+          <div class="name" [title]="f.name">{{ f.name }}</div>
+          <a [href]="f.url" download>Download</a>
+        </div>
       </div>
-      <div class="meta">
-        <div class="name" [title]="f.name">{{ f.name }}</div>
-        <a [href]="f.url" download>Download</a>
-      </div>
+      }
     </div>
-  </div>
-
-  <ng-template #fileList>
+    } @else {
     <ul class="file-list">
-      <li *ngFor="let f of files(); trackBy: trackById">
+      @for (f of files(); track f.id) {
+      <li>
         <mat-icon>{{ iconFor(f.mime) }}</mat-icon>
         <a [href]="f.url" target="_blank" rel="noopener">{{ f.name }}</a>
       </li>
+      }
     </ul>
-  </ng-template>
-
-  <p class="empty" *ngIf="!folders().length && !files().length">This folder is empty.</p>
-</section> -->
+    } @if (!folders().length && !files().length && !loading()) {
+    <p class="empty">This folder is empty.</p>
+    }
+  </section>
+</div>

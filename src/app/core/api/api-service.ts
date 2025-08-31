@@ -4,7 +4,6 @@ import { firstValueFrom } from 'rxjs';
 import { User } from '../../shared/models/user-model';
 import { Folder } from '../../shared/models/folder-model';
 import { FileItem } from '../../shared/models/file-model';
-import { cors } from '@tinyhttp/cors'
 
 type Order = 'asc' | 'desc'; 
 

@@ -1,6 +1,6 @@
 import { Component, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,6 +21,7 @@ type ViewMode = 'list' | 'grid';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    RouterLink
   ],
   templateUrl: './content.html',
   styleUrl: './content.scss',
@@ -39,9 +40,14 @@ export class Content {
   error = this.store.error;           // string | null
 
   // data from store
-  path = () => this.store.breadcrumb();        // Folder[]
+  breadcrumb = () => this.store.breadcrumb();
   folders = () => this.store.currentFolders(); // Folder[]
   files = () => this.store.currentFiles();     // File[] (already filtered by query)
+
+  async openCrumb(id: number) {
+    await this.router.navigate(['/drive/folder', id]);
+    await this.store.load(id);
+  }
 
   constructor() {
     // react to /drive/folder/:id (or /drive/:id); load folder
