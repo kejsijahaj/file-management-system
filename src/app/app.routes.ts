@@ -5,10 +5,10 @@ import { Register } from './ui/register/register';
 import { Home } from './ui/home/home';
 
 export const routes: Routes = [
-    {path: '', pathMatch: 'full', redirectTo: 'login'},
-    // { path: 'drive/folder/:id', component: Home },
-    // { path: '**', redirectTo: 'drive/folder/0'}, // no data found component
-    { path: 'login', component: Login },
-    { path: 'register', component: Register },
-    { path: 'home', component: Home }
+  { path: '', pathMatch: 'full', redirectTo: 'login' },
+  { path: 'drive/folder/:id', component: Content },
+  { path: 'login', component: Login },
+  { path: 'register', component: Register },
+  { path: 'home', component: Home },
+  { path: '**', redirectTo: 'login', pathMatch: 'full' },
 ];

@@ -1,114 +1,52 @@
-<div class="parent">
-  <!-- breadcrumb -->
-  <nav class="breadcrumb-div breadcrumb" aria-label="Breadcrumb">
-    <a [routerLink]="['/drive/folder', 0]">My Drive</a>
-    @for (seg of breadcrumb(); track seg.id; let last = $last) {
-    <span class="sep">/</span>
-    @if (last) {
-    <span class="current">{{ seg.name }}</span>
-    } @else {
-    <a [routerLink]="['/drive/folder', seg.id]">{{ seg.name }}</a>
-    } }
-  </nav>
-
-  <!-- search -->
-  <div class="search-div toolbar-right">
-    <mat-form-field appearance="outline" class="search-field">
-      <mat-icon matPrefix>search</mat-icon>
-      <input matInput type="search" placeholder="Search files…" (input)="onSearch($event)" />
-      @if (query()) {
-      <button mat-icon-button matSuffix (click)="clearSearch()" aria-label="Clear">
-        <mat-icon>close</mat-icon>
-      </button>
-      }
-    </mat-form-field>
+<div class="content-wrapper">
+  @if (store.loading()) {
+  <div class="center">
+    <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
   </div>
-
-  <!-- view toggle -->
-  <div class="view-div toolbar-right" role="group" aria-label="View mode">
-    <button
-      mat-icon-button
-      [class.active]="viewMode() === 'list'"
-      (click)="setView('list')"
-      aria-label="List"
-    >
-      <mat-icon>view_list</mat-icon>
-    </button>
-    <button
-      mat-icon-button
-      [class.active]="viewMode() === 'grid'"
-      (click)="setView('grid')"
-      aria-label="Grid"
-    >
-      <mat-icon>grid_view</mat-icon>
-    </button>
-  </div>
-
-  <!-- content -->
-  <section class="content-div pane" aria-live="polite">
-    @if (loading()) {
-    <div class="status">Loading…</div>
-    } @if (error()) {
-    <div class="status error">{{ error() }}</div>
-    } @if (folders().length) {
-    <h4>Folders</h4>
-    } @if (viewMode() === 'grid') {
-    <div class="folder-grid">
-      @for (f of folders(); track f.id) {
-      <button
-        type="button"
-        class="folder-card"
-        (click)="openFolder(f.id)"
-      >
-        <mat-icon>folder</mat-icon>
-        <span class="name">{{ f.name }}</span>
-      </button>
-      }
+  } @else if (store.error()) {
+  <div class="center-error">{{ store.error() }}</div>
+  } @else { @if (store.viewMode() === 'grid') {
+  <div class="grid">
+    @for (f of store.currentFolders(); track f.id) {
+    <div class="tile folder" (click)="go(f.id)">
+      <mat-icon>folder</mat-icon>
+      <div class="name">{{ f.name }}</div>
     </div>
-    } @else {
-    <ul class="folder-list">
-      @for (f of folders(); track f.id) {
-      <li
-        role="button"
-        tabindex="0"
-        (click)="openFolder(f.id)"
-        (keydown.enter)="openFolder(f.id)"
-        (keydown.space)="openFolder(f.id)"
-      >
-        <mat-icon>folder</mat-icon>
-        <span class="name">{{ f.name }}</span>
-      </li>
-      }
-    </ul>
-    } @if (files().length) {
-    <h4>Files</h4>
-    } @if (viewMode() === 'grid') {
-    <div class="file-grid">
-      @for (f of files(); track f.id) {
-      <div class="file-card">
-        <div class="thumb">
-          @if (isImage(f.mime)) { <img [src]="f.url" [alt]="f.name" /> } @else if (isPdf(f.mime)) {
-          <object [data]="safe(f.url)" type="application/pdf"></object> } @else {
-          <mat-icon>insert_drive_file</mat-icon> }
-        </div>
-        <div class="meta">
-          <div class="name" [title]="f.name">{{ f.name }}</div>
-          <a [href]="f.url" download>Download</a>
-        </div>
-      </div>
-      }
+    } @for (fl of store.currentFiles(); track fl.id){
+    <div class="tile file">
+      <mat-icon>insert_drive_file</mat-icon>
+      <div class="name">{{ fl.name }}</div>
     </div>
-    } @else {
-    <ul class="file-list">
-      @for (f of files(); track f.id) {
-      <li>
-        <mat-icon>{{ iconFor(f.mime) }}</mat-icon>
-        <a [href]="f.url" target="_blank" rel="noopener">{{ f.name }}</a>
-      </li>
-      }
-    </ul>
-    } @if (!folders().length && !files().length && !loading()) {
-    <p class="empty">This folder is empty.</p>
+    } @if (store.currentFiles().length === 0 && store.currentFolders().length === 0) {
+    <div class="center-empty">Empty</div>
     }
-  </section>
+  </div>
+  } @else {
+  <div class="list">
+    <div class="row header">
+      <div class="col name">Name</div>
+      <div class="col type">Type</div>
+      <div class="col size">Size</div>
+      <div class="col updated">Last Updated</div>
+    </div>
+    @for (f of store.currentFolders(); track f.id) {
+    <div class="row item" (click)="go(f.id)">
+      <div class="col name"><mat-icon class="mr">folder</mat-icon> {{ f.name }}</div>
+      <div class="col type">Folder</div>
+      <div class="col size">-</div>
+      <div class="col updated">{{ f.createdAt | date : 'mediumDate' }}</div>
+    </div>
+    } @for (fl of store.currentFiles(); track fl.id) {
+    <div class="row item" (click)="openFile(fl.id)">
+      <div class="col name"><mat-icon class="mr">insert_drive_file</mat-icon> {{ fl.name }}</div>
+      <div class="col type">{{ fl.mime || 'File' }}</div>
+      <div class="col size">{{ fl.size | number }}</div>
+      <div class="col updated">{{ fl.updatedAt | date : 'mediumDate' }}</div>
+    </div>
+    }
+    @if (store.currentFolders().length === 0 && store.currentFiles().length === 0) {
+      <div class="row empty">Empty</div>
+    }
+  </div>
+  } }
 </div>

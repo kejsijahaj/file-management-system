@@ -67,7 +67,6 @@ export class Sidenav {
   async open(node: NodeItem) {
     if (node.type === 'folder') {
       await this.router.navigate(['/drive/folder', node.id]);
-      await this.store.load(Number(node.id));
       return;
     }
     // TODO: file preview / download

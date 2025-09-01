@@ -15,54 +15,119 @@
       "parentId": 0,
       "createdAt": "2025-08-01T09:10:00Z"
     },
+    { "id": 11, "userId": 1, "name": "Design", "parentId": 0, "createdAt": "2025-08-01T09:20:00Z" },
+    { "id": 12, "userId": 1, "name": "2025", "parentId": 10, "createdAt": "2025-08-02T09:20:00Z" },
+    { "id": 13, "userId": 1, "name": "Q1", "parentId": 12, "createdAt": "2025-08-02T09:30:00Z" },
+    { "id": 14, "userId": 1, "name": "2024", "parentId": 10, "createdAt": "2025-08-02T09:40:00Z" },
+    { "id": 15, "userId": 1, "name": "Logos", "parentId": 11, "createdAt": "2025-08-02T09:50:00Z" },
     {
-      "id": 11,
+      "id": 16,
       "userId": 1,
-      "name": "Design",
-      "parentId": 0,
-      "createdAt": "2025-08-01T09:20:00Z"
-    },
-    {
-      "id": 12,
-      "userId": 1,
-      "name": "2025",
-      "parentId": 10,
-      "createdAt": "2025-08-01T10:00:00Z"
+      "name": "Mockups",
+      "parentId": 11,
+      "createdAt": "2025-08-02T10:00:00Z"
     }
   ],
   "files": [
     {
-      "id": 101,
+      "id": 201,
       "userId": 1,
       "folderId": 10,
-      "name": "invoice-001.pdf",
+      "name": "invoice-2025-08.pdf",
       "mime": "application/pdf",
-      "size": 102400,
-      "url": "/assets/uploads/invoice-001.pdf",
-      "createdAt": "2025-08-05T08:00:00Z",
-      "updatedAt": "2025-08-05T08:00:00Z"
+      "size": 12345,
+      "url": "/assets/uploads/invoice-2025-08.pdf",
+      "createdAt": "2025-08-01T10:00:00Z",
+      "updatedAt": "2025-08-01T10:00:00Z"
     },
     {
-      "id": 102,
+      "id": 202,
+      "userId": 1,
+      "folderId": 12,
+      "name": "invoice-summary.xlsx",
+      "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "size": 5321,
+      "url": "/assets/uploads/invoice-summary.xlsx",
+      "createdAt": "2025-08-02T10:00:00Z",
+      "updatedAt": "2025-08-02T10:00:00Z"
+    },
+    {
+      "id": 203,
+      "userId": 1,
+      "folderId": 13,
+      "name": "invoice-march.pdf",
+      "mime": "application/pdf",
+      "size": 7321,
+      "url": "/assets/uploads/invoice-march.pdf",
+      "createdAt": "2025-08-02T11:00:00Z",
+      "updatedAt": "2025-08-02T11:00:00Z"
+    },
+    {
+      "id": 204,
+      "userId": 1,
+      "folderId": 14,
+      "name": "invoice-2024-12.pdf",
+      "mime": "application/pdf",
+      "size": 8432,
+      "url": "/assets/uploads/invoice-2024-12.pdf",
+      "createdAt": "2025-08-02T12:00:00Z",
+      "updatedAt": "2025-08-02T12:00:00Z"
+    },
+
+    {
+      "id": 205,
       "userId": 1,
       "folderId": 11,
-      "name": "logo.svg",
-      "mime": "image/svg+xml",
-      "size": 21024,
-      "url": "/assets/uploads/logo.svg",
-      "createdAt": "2025-08-05T09:00:00Z",
-      "updatedAt": "2025-08-05T09:00:00Z"
+      "name": "design-guidelines.pdf",
+      "mime": "application/pdf",
+      "size": 22345,
+      "url": "/assets/uploads/design-guidelines.pdf",
+      "createdAt": "2025-08-02T13:00:00Z",
+      "updatedAt": "2025-08-02T13:00:00Z"
     },
     {
-      "id": 103,
+      "id": 206,
       "userId": 1,
-      "folderId": 0,
-      "name": "readme.txt",
-      "mime": "text/plain",
-      "size": 59,
-      "url": "/assets/uploads/readme.txt",
-      "createdAt": "2025-08-05T10:00:00Z",
-      "updatedAt": "2025-08-05T10:00:00Z"
+      "folderId": 15,
+      "name": "logo-variant1.png",
+      "mime": "image/png",
+      "size": 4321,
+      "url": "/assets/uploads/logo-variant1.png",
+      "createdAt": "2025-08-02T14:00:00Z",
+      "updatedAt": "2025-08-02T14:00:00Z"
+    },
+    {
+      "id": 207,
+      "userId": 1,
+      "folderId": 15,
+      "name": "logo-variant2.svg",
+      "mime": "image/svg+xml",
+      "size": 1234,
+      "url": "/assets/uploads/logo-variant2.svg",
+      "createdAt": "2025-08-02T14:05:00Z",
+      "updatedAt": "2025-08-02T14:05:00Z"
+    },
+    {
+      "id": 208,
+      "userId": 1,
+      "folderId": 16,
+      "name": "homepage-mockup.jpg",
+      "mime": "image/jpeg",
+      "size": 6234,
+      "url": "/assets/uploads/homepage-mockup.jpg",
+      "createdAt": "2025-08-02T15:00:00Z",
+      "updatedAt": "2025-08-02T15:00:00Z"
+    },
+    {
+      "id": 209,
+      "userId": 1,
+      "folderId": 16,
+      "name": "dashboard-mockup.jpg",
+      "mime": "image/jpeg",
+      "size": 7345,
+      "url": "/assets/uploads/dashboard-mockup.jpg",
+      "createdAt": "2025-08-02T15:10:00Z",
+      "updatedAt": "2025-08-02T15:10:00Z"
     }
   ]
 }
