@@ -38,6 +38,9 @@
 </ng-template>
 
 <div class="tree">
+  <button mat-button class="create-button" (click)="create()">
+    <mat-icon>add</mat-icon> New
+  </button>
   <ng-container
     [ngTemplateOutlet]="renderNode"
     [ngTemplateOutletContext]="{ $implicit: root() }">

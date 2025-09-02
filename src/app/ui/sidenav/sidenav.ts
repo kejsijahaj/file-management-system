@@ -125,6 +125,12 @@ export class Sidenav {
     }
   }
 
+  // -------- create files and folders --------
+
+  create() {
+    console.log('create new file or folder');
+  }
+
   // ---------------- helpers ----------------
   isExpanded = (id: string | number) => this.expanded().has(String(id));
 
