@@ -1,160 +1,109 @@
-/* =========================
-   Layout grid (your areas)
-   ========================= */
-.parent {
+.page {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(5, 1fr);
-  grid-column-gap: 0;
-  grid-row-gap: 0;
-  height: 100%;
-  min-height: 0; /* allow content to scroll inside */
+  grid-template-rows: 56px 1fr;
+  grid-template-columns: 280px 1fr;
+  height: 100vh;
 }
-
-.breadcrumb-div { grid-area: 1 / 1 / 2 / 4; }
-.search-div     { grid-area: 1 / 4 / 2 / 5; }
-.view-div       { grid-area: 1 / 5 / 2 / 6; }
-.content-div    { grid-area: 2 / 1 / 6 / 6; min-height: 0; overflow: auto; }
-
-/* =========================
-   Compact toolbar row
-   ========================= */
-.breadcrumb-div,
-.search-div,
-.view-div {
-  position: sticky; top: 0; z-index: 1;
-  background: #fff;
-  display: flex; align-items: center;
-  padding: 2px 8px;            /* thinner */
-  min-height: 32px;            /* target row height */
+.header {
+  grid-column: 1/3;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
   border-bottom: 1px solid #e5e5e5;
-  font-size: 13.5px;           /* slightly smaller text */
 }
-
-.breadcrumb-div, .search-div, .view-div {
-  display: flex; align-items: center; padding: 2px 6px; min-height: 30px; border-bottom: 1px solid #e5e5e5;
+.sidebar {
+  border-right: 1px solid #e5e5e5;
+  overflow: auto;
 }
-.search-field { max-width: 260px; width: 100%; }
-
-
-/* Breadcrumb look */
-.breadcrumb {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  a { color: inherit; text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .sep { opacity: .6; }
-  .current { font-weight: 600; }
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-
-/* =========================
-   Material overrides (dense)
-   ========================= */
-/* Make the search field short. These targets are MDC/Mat internals; ::ng-deep keeps it scoped. */
-.search-field {
-  width: 100%;
-  max-width: 260px;
-
-  ::ng-deep .mat-mdc-text-field-wrapper {
-    height: 28px !important;             /* overall height */
-    padding: 0 6px !important;           /* reduce side padding */
-  }
-  ::ng-deep .mat-mdc-form-field-flex {
-    min-height: 28px !important;
-    height: 28px !important;
-  }
-  ::ng-deep .mat-mdc-form-field-infix {
-    padding: 0 !important;               /* kill top/bottom padding */
-  }
-  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-    display: none !important;            /* remove hint/error reserve space */
-  }
-  input.mat-mdc-input-element {
-    height: 24px !important;
-    line-height: 24px !important;
-    padding: 0 !important;
-    font-size: 13px;
-  }
-  ::ng-deep .mat-mdc-form-field-icon-prefix,
-  ::ng-deep .mat-mdc-form-field-icon-suffix {
-    padding: 0 4px !important;           /* smaller icon gutters */
-  }
-}
-
-/* Icon buttons (view toggle & clear) to 28x28 with smaller icons */
-.view-div button,
-.search-div button {
-  width: 28px; height: 28px; padding: 0;
-  border-radius: 50%;
-}
-:host ::ng-deep .mat-mdc-icon-button {
-  width: 28px !important; height: 28px !important; padding: 0 !important;
-}
-:host ::ng-deep .mat-mdc-icon-button .mat-mdc-button-touch-target {
-  width: 28px !important; height: 28px !important; /* remove 48px touch target */
-}
-:host ::ng-deep .mat-icon {
-  font-size: 18px; width: 18px; height: 18px; line-height: 18px;
-}
-
-/* Active state for view toggle */
-.view-div button.active { background: rgba(0,0,0,0.06); }
-
-/* =========================
-   Content styling (unchanged look, compact spacing)
-   ========================= */
-.status { padding: 8px 10px; color: #6b7280; }
-.status.error { color: #b00020; }
-
-.pane { padding: 10px; display: grid; gap: 10px; }
-
-.folder-grid, .file-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+.toolbar {
+  display: flex;
+  align-items: center;
   gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e5e5;
 }
-
-.folder-card {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px; border: 1px solid #eee; border-radius: 10px;
-  cursor: pointer; background: #fff; text-align: left;
+.search {
+  width: 320px;
+  max-width: 45vw;
 }
-.folder-card mat-icon { color: #f0a92b; }
-
-.folder-list, .file-list {
-  list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
+.spacer {
+  flex: 1 1 auto;
 }
-.folder-list li, .file-list li {
-  display: flex; align-items: center; gap: 10px; padding: 6px 8px;
-  border-radius: 8px; cursor: pointer;
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
 }
-.folder-list li:hover, .file-list li:hover { background: #f7f7f7; }
-
-.file-card {
-  display: grid; grid-template-rows: 110px auto; gap: 8px;
-  padding: 10px; border: 1px solid #eee; border-radius: 10px; background: #fff;
+.crumb {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
 }
-.file-card .thumb {
-  display: flex; align-items: center; justify-content: center;
-  border: 1px dashed #ddd; border-radius: 8px; overflow: hidden;
+.crumb:hover {
+  background: #f3f3f3;
 }
-.file-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
-.file-card .thumb object { width: 100%; height: 100%; }
-.file-card .thumb mat-icon { font-size: 44px; width: 44px; height: 44px; opacity: 0.7; }
-.file-card .meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.file-card .name { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-
-.empty { opacity: 0.7; padding: 6px 0; }
-
-/* =========================
-   Responsive tweak
-   ========================= */
-@media (max-width: 800px) {
-  .parent {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto 1fr 1fr 1fr;
-  }
-  .breadcrumb-div { grid-area: 1 / 1 / 2 / 3; }
-  .search-div     { grid-area: 2 / 1 / 3 / 2; }
-  .view-div       { grid-area: 2 / 2 / 3 / 3; justify-content: flex-start; }
-  .content-div    { grid-area: 3 / 1 / 6 / 3; }
+.sep {
+  opacity: 0.6;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 12px;
+}
+.tile {
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+.tile:hover {
+  background: #fafafa;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr 160px 120px 160px;
+  align-items: center;
+  padding: 10px 12px;
+  border-top: 1px solid #eee;
+}
+.row.header {
+  font-weight: 600;
+  background: #fafafa;
+  border-top: none;
+}
+.row.item:hover {
+  background: #fcfcfc;
+  cursor: pointer;
+}
+.mr {
+  margin-right: 6px;
+}
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.error {
+  color: #b00020;
 }

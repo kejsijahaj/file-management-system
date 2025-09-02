@@ -39,8 +39,8 @@
     } @for (fl of store.currentFiles(); track fl.id) {
     <div class="row item" (click)="openFile(fl.id)">
       <div class="col name"><mat-icon class="mr">insert_drive_file</mat-icon> {{ fl.name }}</div>
-      <div class="col type">{{ fl.mime || 'File' }}</div>
-      <div class="col size">{{ fl.size | number }}</div>
+      <div class="col type">{{ fl.mime | filePipe }}</div>
+      <div class="col size">{{ fl.size | sizePipe }}</div>
       <div class="col updated">{{ fl.updatedAt | date : 'mediumDate' }}</div>
     </div>
     }

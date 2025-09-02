@@ -4,8 +4,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 
+import { FilePipe } from '../../shared/pipes/file-pipe';
+import { SizePipe } from '../../shared/pipes/size-pipe';
 import { DriveStore } from '../../features/drive/state/drive-store';
-import { Sidenav } from '../sidenav/sidenav';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
@@ -15,7 +16,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
   imports: [
     CommonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    FilePipe,
+    SizePipe
 ],
   templateUrl: './content.html',
   styleUrl: './content.scss',
@@ -37,7 +40,7 @@ export class Content {
   }
 
   go(id: number) {
-    this.router.navigate(['/drive/folders', id]);
+    this.router.navigate(['/drive/folder', id]);
   }
 
   openFile(id: number) {
