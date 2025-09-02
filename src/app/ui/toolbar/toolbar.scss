@@ -1,0 +1,38 @@
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  flex-wrap: nowrap;
+  min-height: 40px;
+}
+.crumb {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px; 
+}
+.crumb:hover {
+  background: #f3f3f3;
+}
+.crumb.icon {
+  padding: 4px;
+  border-radius: 8px;
+}
+.sep {
+  font-size: 18px;
+  opacity: 0.7;
+}
+.name {
+  display: inline-block;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,1 +1,13 @@
-<p>toolbar works!</p>
+<div class="breadcrumb">
+    <button class="crumb icon" type="button" (click)="go(0)">
+        <mat-icon>home</mat-icon>
+    </button>
+
+    @for (c of store.breadcrumb(); track c.id; let last = $last) {
+        <mat-icon class="sep">chevron_right</mat-icon>
+
+        <button class="crumb" type="button" (click)="go(c.id)">
+            <span class="name">{{ c.name }}</span>
+        </button>
+    }
+</div>
