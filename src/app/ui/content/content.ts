@@ -30,6 +30,7 @@ export class Content {
 
   // listen to id changes
   folderId = toSignal(this.route.paramMap.pipe(map(p => Number(p.get('id') ?? 0))), { initialValue: 0});
+parent: any;
 
   constructor() {
     // load when id changes

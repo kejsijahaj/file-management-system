@@ -146,11 +146,6 @@ export class ApiService {
     return this.get<FileItem[]>(`/files`, params);
   }
 
-  searchFiles(userId: number, q: string): Promise<FileItem[]> {
-    const params = paramsForm({ userId, name_like: q, _sort: 'name', _order: 'asc' });
-    return this.get<FileItem[]>(`/files`, params);
-  }
-
   getFile(id: number): Promise<FileItem> {
     return this.get<FileItem>(`/files/${id}`);
   }
@@ -173,5 +168,16 @@ export class ApiService {
 
   moveFile(id: number, folderId: number): Promise<FileItem> {
     return this.patchFile(id, { folderId });
+  }
+
+  // -------- search ----------
+  searchFoldersByName(userId: number, q: string) {
+    const params = paramsForm({ userId, name_like: q });
+    return this.get<Folder[]>(`/folders`, params);
+  }
+
+  searchFilesByName(userId: number, q: string) {
+    const params = paramsForm({ userId, name_like: q });
+    return this.get<FileItem[]>(`/files`, params);
   }
 }

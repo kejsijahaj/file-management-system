@@ -1,13 +1,49 @@
-<div class="breadcrumb">
+<div class="toolbar">
+  <div class="breadcrumb">
     <button class="crumb icon" type="button" (click)="go(0)">
-        <mat-icon>home</mat-icon>
+      <mat-icon>home</mat-icon>
     </button>
 
     @for (c of store.breadcrumb(); track c.id; let last = $last) {
-        <mat-icon class="sep">chevron_right</mat-icon>
+    <mat-icon class="sep">chevron_right</mat-icon>
 
-        <button class="crumb" type="button" (click)="go(c.id)">
-            <span class="name">{{ c.name }}</span>
-        </button>
+    <button class="crumb" type="button" (click)="go(c.id)">
+      <span class="name">{{ c.name }}</span>
+    </button>
     }
+  </div>
+
+  <div class="search">
+    <div class="search-input">
+      <mat-icon>search</mat-icon>
+      <input
+        #searchBox
+        type="text"
+        placeholder="Search..."
+        [value]="store.query()"
+        (input)="onSearchInput(searchBox.value)"
+      />
+
+      @if (store.query()) {
+      <button type="button" class="clear-btn" (click)="clearSearch()">✕</button>
+      }
+    </div>
+  </div>
+
+  <div class="view-toggle">
+    <button
+      matIconButton
+      [class.active]="store.viewMode() === 'list'"
+      (click)="setViewMode('list')"
+    >
+      <mat-icon>list</mat-icon>
+    </button>
+    <button
+      matIconButton
+      [class.active]="store.viewMode() === 'grid'"
+      (click)="setViewMode('grid')"
+    >
+      <mat-icon>grid_view</mat-icon>
+    </button>
+  </div>
 </div>

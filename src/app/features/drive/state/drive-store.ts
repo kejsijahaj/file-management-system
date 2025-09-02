@@ -5,6 +5,18 @@ import { FileItem } from '../../../shared/models/file-model';
 import { ConfirmService } from '../../../shared/services/confirm-service';
 
 type Id = number;
+type SearchHit =
+  | { kind: 'folder'; id: number; name: string; parentId: number }
+  | {
+      parentId: any;
+      kind: 'file';
+      id: number;
+      name: string;
+      folderId: number;
+      mime?: string;
+      size?: number;
+      updatedAt?: string;
+    };
 
 // small helper
 const clone = <K, V>(m: Map<K, V>) => new Map<K, V>(m);
@@ -103,9 +115,74 @@ export class DriveStore {
     }
   }
 
-  async search(text: string) {
-    this.query.set(text);
-    // potentially add server side filtering later
+  // ------- search -------
+  searchMode = signal<boolean>(false);
+  searchResults = signal<SearchHit[]>([]);
+
+  clearSearch() {
+    this.query.set('');
+    this.searchMode.set(false);
+    this.searchResults.set([]);
+  }
+
+  async searchGlobal(text: string) {
+    const raw = (text ?? '').trim();
+    this.query.set(raw);
+
+    if (!raw) {
+      this.clearSearch();
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set(null);
+
+    try {
+      const uid = this.userId();
+
+      const [folders, files] = await Promise.all([
+        this.api.searchFoldersByName(uid, raw),
+        this.api.searchFilesByName(uid, raw),
+      ]);
+
+      const qlc = raw.toLowerCase();
+      const foldersFiltered = (folders ?? []).filter((f) => f.name?.toLowerCase().includes(qlc));
+      const filesFiltered = (files ?? []).filter((f) => f.name?.toLowerCase().includes(qlc));
+
+      const fMap = new Map(this.foldersById());
+      for (const f of foldersFiltered) fMap.set(f.id, f);
+      this.foldersById.set(fMap);
+
+      const fileMap = new Map(this.filesById());
+      for (const f of filesFiltered) fileMap.set(f.id, f);
+      this.filesById.set(fileMap);
+
+      const hits: SearchHit[] = [
+        ...foldersFiltered.map((f) => ({
+          kind: 'folder' as const,
+          id: f.id,
+          name: f.name,
+          parentId: f.parentId,
+        })),
+        ...filesFiltered.map((f) => ({
+          kind: 'file' as const,
+          id: f.id,
+          name: f.name,
+          folderId: f.folderId,
+          parentId: f.folderId,
+          mime: f.mime,
+          size: f.size,
+          updatedAt: f.updatedAt,
+        })),
+      ];
+
+      this.searchResults.set(hits);
+      this.searchMode.set(true);
+    } catch (e: any) {
+      this.error.set(e?.message ?? 'Failed to search');
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   // ------ index helpers ------
@@ -252,50 +329,58 @@ export class DriveStore {
     const parentOf = new Map<Id, Id>();
     const allFolders: Id[] = [];
 
-    const queue: Array<{ id: Id; depth: number}> = [{ id: rootId, depth: 0}];
+    const queue: Array<{ id: Id; depth: number }> = [{ id: rootId, depth: 0 }];
     depths.set(rootId, 0);
     parentOf.set(rootId, this.foldersById().get(rootId)?.parentId ?? 0);
 
     while (queue.length) {
-        const {id, depth} = queue.shift()!;
-        allFolders.push(id);
+      const { id, depth } = queue.shift()!;
+      allFolders.push(id);
 
-        const children = await this.api.listChildrenFolders(uid, id);
-        for ( const c of children) {
-            depths.set(c.id, depth + 1);
-            parentOf.set(c.id, c.parentId);
-            queue.push({ id: c.id, depth: depth + 1});
+      const children = await this.api.listChildrenFolders(uid, id);
+      for (const c of children) {
+        depths.set(c.id, depth + 1);
+        parentOf.set(c.id, c.parentId);
+        queue.push({ id: c.id, depth: depth + 1 });
 
-            const fm = new Map(this.foldersById()); fm.set(c.id, c); this.foldersById.set(fm);
-            const idx = new Map(this.childrenByParent());
-            const arr = idx.get(id) ?? [];
-            if (!arr.includes(c.id)) idx.set(id, [...arr, c.id]);
-            this.childrenByParent.set(idx);
-        }
+        const fm = new Map(this.foldersById());
+        fm.set(c.id, c);
+        this.foldersById.set(fm);
+        const idx = new Map(this.childrenByParent());
+        const arr = idx.get(id) ?? [];
+        if (!arr.includes(c.id)) idx.set(id, [...arr, c.id]);
+        this.childrenByParent.set(idx);
+      }
     }
 
-    allFolders.sort((a, b) => (depths.get(b)! - depths.get(a)!));
+    allFolders.sort((a, b) => depths.get(b)! - depths.get(a)!);
 
-    for ( const fid of allFolders) {
-        // delete files in this folder
-        const files = await this.api.listFilesInFolder(uid, fid);
-        if(files.length) {
-            await Promise.all(files.map(async f => {
-                await this.api.deleteFile(f.id);
+    for (const fid of allFolders) {
+      // delete files in this folder
+      const files = await this.api.listFilesInFolder(uid, fid);
+      if (files.length) {
+        await Promise.all(
+          files.map(async (f) => {
+            await this.api.deleteFile(f.id);
 
-                const m = new Map(this.filesById()); m.delete(f.id); this.filesById.set(m);
-                this._removeFileIndex(fid, f.id);
-            }));
-        }
+            const m = new Map(this.filesById());
+            m.delete(f.id);
+            this.filesById.set(m);
+            this._removeFileIndex(fid, f.id);
+          })
+        );
+      }
 
-        // delete folder
-        await this.api.deleteFolder(fid);
+      // delete folder
+      await this.api.deleteFolder(fid);
 
-        // update store
-        const fm = new Map(this.foldersById()); fm.delete(fid); this.foldersById.set(fm);
+      // update store
+      const fm = new Map(this.foldersById());
+      fm.delete(fid);
+      this.foldersById.set(fm);
 
-        const parentId = parentOf.get(fid) ?? 0;
-        this._removeChild(parentId, fid);
+      const parentId = parentOf.get(fid) ?? 0;
+      this._removeChild(parentId, fid);
     }
   }
 

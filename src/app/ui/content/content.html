@@ -5,15 +5,51 @@
   </div>
   } @else if (store.error()) {
   <div class="center-error">{{ store.error() }}</div>
-  } @else { @if (store.viewMode() === 'grid') {
+  } @else {
+
+  <!----------- search mode --------->
+  @if (store.searchMode()) {
+  <div class="list">
+    <div class="row header">
+      <div class="col name">Name</div>
+      <div class="col type">Type</div>
+      <div class="col updated">Last Updated</div>
+    </div>
+
+    @for (hit of store.searchResults(); track hit.kind + ':' + hit.id) {
+    <div class="row item" (click)="hit.kind === 'folder' ? go(hit.id) : openFile(hit.id)">
+      <div class="col name">
+        <mat-icon class="mr">{{ hit.kind === 'folder' ? 'folder' : 'insert_drive_file' }}</mat-icon>
+        {{ hit.name }}
+      </div>
+
+      <div class="col type">
+        {{ hit.kind === 'folder' ? 'Folder' : (hit.mime ?? '' | filePipe) }}
+      </div>
+
+      <div class="col updated">
+        @if (hit.kind === 'file' && hit.updatedAt) {
+        {{ hit.updatedAt | date : 'mediumDate' }}
+        } @else { - }
+      </div>
+    </div>
+    } @if (store.searchResults().length === 0) {
+    <div class="row empty">No results found</div>
+    }
+  </div>
+
+  } @else {
+  <!--------- normal view ----------->
+
+  @if (store.viewMode() === 'grid') {
   <div class="grid">
     @for (f of store.currentFolders(); track f.id) {
     <div class="tile folder" (click)="go(f.id)">
       <mat-icon>folder</mat-icon>
       <div class="name">{{ f.name }}</div>
     </div>
-    } @for (fl of store.currentFiles(); track fl.id){
-    <div class="tile file">
+    } @for (fl of store.currentFiles(); track fl.id) {
+    <div class="tile file" (click)="openFile(fl.id)">
       <mat-icon>insert_drive_file</mat-icon>
       <div class="name">{{ fl.name }}</div>
     </div>
@@ -21,6 +57,7 @@
     <div class="center-empty">Empty</div>
     }
   </div>
+
   } @else {
   <div class="list">
     <div class="row header">
@@ -29,6 +66,7 @@
       <div class="col size">Size</div>
       <div class="col updated">Last Updated</div>
     </div>
+
     @for (f of store.currentFolders(); track f.id) {
     <div class="row item" (click)="go(f.id)">
       <div class="col name"><mat-icon class="mr">folder</mat-icon> {{ f.name }}</div>
@@ -43,10 +81,9 @@
       <div class="col size">{{ fl.size | sizePipe }}</div>
       <div class="col updated">{{ fl.updatedAt | date : 'mediumDate' }}</div>
     </div>
-    }
-    @if (store.currentFolders().length === 0 && store.currentFiles().length === 0) {
-      <div class="row empty">Empty</div>
+    } @if (store.currentFolders().length === 0 && store.currentFiles().length === 0) {
+    <div class="row empty">Empty</div>
     }
   </div>
-  } }
+  } } }
 </div>

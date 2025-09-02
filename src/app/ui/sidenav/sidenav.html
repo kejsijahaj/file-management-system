@@ -38,13 +38,8 @@
 </ng-template>
 
 <div class="tree">
-  <div class="children root-children">
-    @for (child of root().children ?? []; track (child.type + ':' + child.id)) {
-      <ng-container [ngTemplateOutlet]="renderNode"
-                    [ngTemplateOutletContext]="{ $implicit: child }"></ng-container>
-    }
-    @if ((root().children ?? []).length === 0 && root().loaded && !root().loading) {
-      <div class="empty">Empty</div>
-    }
-  </div>
+  <ng-container
+    [ngTemplateOutlet]="renderNode"
+    [ngTemplateOutletContext]="{ $implicit: root() }">
+  </ng-container>
 </div>
