@@ -44,6 +44,7 @@
 
 .search-input {
   position: relative;
+  margin-bottom: 5px;
   display: inline-flex;
   align-items: center;
   width: 250px;
@@ -76,4 +77,13 @@
       color: #000;
     }
   }
+}
+
+.view-toggle {
+    margin: auto;
+}
+
+.search-view-wrapper {
+  display: flex;
+  align-items: flex-end;
 }
