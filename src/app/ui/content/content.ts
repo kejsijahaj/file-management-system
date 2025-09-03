@@ -68,6 +68,16 @@ export class Content {
     }
   }
 
+  onEditFolder(id: number): void {
+    console.log('edit folder', id);
+    // will change folder name
+  }
+
+  onEditFile(id: number, name: string): void {
+    console.log('edit file', id, name);
+    // will change file name
+  }
+
   go(id: number) {
     this.router.navigate(['/drive/folder', id]);
   }

@@ -81,7 +81,7 @@
 }
 .row {
   display: grid;
-  grid-template-columns: 3fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 3fr 1fr 1fr 1fr 0fr 0fr;
   align-items: center;
   padding: 10px 12px;
   border-top: 1px solid #eee;
