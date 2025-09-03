@@ -1,0 +1,18 @@
+<h1 class="dialog-title" mat-dialog-title>{{ data.title }}</h1>
+
+<div class="dialog-content p-1" mat-dialog-content [formGroup]="form">
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label class="label">{{ data.label }}</mat-label>
+    <input matInput formControlName="name" cdkFocusInitial (keydown.enter)="onConfirm()" />
+    @if (form.get('name')?.hasError('required')) {
+    <mat-error>Name is required</mat-error>
+    }
+  </mat-form-field>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onConfirm()" [disabled]="form.invalid">
+    Confirm
+  </button>
+</div>

@@ -439,6 +439,30 @@ export class DriveStore {
     this._addFileIndex(created.folderId, created.id);
   }
 
+  async createFile(name: string) {
+    const now = new Date().toISOString();
+    const fileName = name.includes('.') ? name: `${name}.txt`;
+
+    const body: Omit<FileItem, 'id'> = {
+      userId: this.userId(),
+      folderId: this.currentFolderId(),
+      name: fileName,
+      mime: 'text/plain',
+      size: 0,
+      url: `/assets/uploads/${fileName}`,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const created = await this.api.createFile(body);
+
+    // upset + index
+    const map = clone(this.filesById());
+    map.set(created.id, created);
+    this.filesById.set(map);
+    this._addFileIndex(created.folderId, created.id);
+  }
+
   async renameFile(id: Id, newName: string) {
     const updated = await this.api.patchFile(id, {
       name: newName,

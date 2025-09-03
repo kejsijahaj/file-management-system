@@ -38,9 +38,21 @@
 </ng-template>
 
 <div class="tree">
-  <button mat-button class="create-button" (click)="create()">
+  <button mat-button class="create-button" [matMenuTriggerFor]="createMenu">
     <mat-icon>add</mat-icon> New
   </button>
+
+  <mat-menu #createMenu="matMenu">
+    <button mat-menu-item (click)="openCreateDialog('folder')">
+      <mat-icon>create_new_folder</mat-icon>
+      <span>New Folder</span>
+    </button>
+    <button mat-menu-item (click)="openCreateDialog('file')">
+      <mat-icon>note_add</mat-icon>
+      <span>New File</span>
+    </button>
+  </mat-menu>
+
   <ng-container
     [ngTemplateOutlet]="renderNode"
     [ngTemplateOutletContext]="{ $implicit: root() }">

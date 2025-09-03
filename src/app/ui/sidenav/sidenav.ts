@@ -8,6 +8,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { ApiService } from '../../core/api/api-service';
 import { DriveStore } from '../../features/drive/state/drive-store';
+import { MatMenuItem, MatMenuModule } from '@angular/material/menu';
+import { MatDialog } from '@angular/material/dialog';
+import { NameDialog, NameDialogData } from '../../shared/components/name-dialog/name-dialog';
 
 type NodeType = 'folder' | 'file';
 
@@ -25,13 +28,21 @@ interface NodeItem {
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [
+    CommonModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatMenuItem,
+    MatMenuModule,
+  ],
   templateUrl: './sidenav.html',
   styleUrl: './sidenav.scss',
 })
 export class Sidenav {
   private api = inject(ApiService);
   private router = inject(Router);
+  private dialog = inject(MatDialog);
   store = inject(DriveStore);
 
   root = signal<NodeItem>({
@@ -127,8 +138,32 @@ export class Sidenav {
 
   // -------- create files and folders --------
 
-  create() {
-    console.log('create new file or folder');
+  openCreateDialog(type: 'folder' | 'file') {
+    const dialogConfig = {
+      data: {
+        title:type === 'folder' ? 'Create New Folder' : 'Create New File',
+        label: type === 'folder' ? 'Folder Name' : 'File Name',
+      } as NameDialogData,
+      width: '400px',
+    };
+
+    const dialogRef = this.dialog.open(NameDialog, dialogConfig);
+
+    dialogRef.afterClosed().subscribe(async (name: string | undefined) => {
+      if (!name) return;
+
+      try {
+        if (type === 'folder') {
+          await this.store.createFolder(name);
+        } else {
+          await this.store.createFile(name);
+        }
+        // add toast success
+      } catch (error) {
+        console.error(`Failed to create ${type}:`, error);
+        // add toast fail
+      }
+    });
   }
 
   // ---------------- helpers ----------------
