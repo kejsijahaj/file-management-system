@@ -157,8 +157,6 @@ export class Sidenav {
       try {
         if (type === 'folder') {
           await this.store.createFolder(name);
-        } else {
-          await this.store.createFile(name);
         }
         // add toast success
       } catch (error) {
