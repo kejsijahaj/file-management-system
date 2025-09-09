@@ -63,12 +63,12 @@
       "id": "201",
       "userId": 1,
       "folderId": 10,
-      "name": "invoice-2025-08.pdf",
+      "name": "Invoice-2025-08",
       "mime": "application/pdf",
       "size": 12345,
       "url": "/assets/uploads/invoice-2025-08.pdf",
       "createdAt": "2025-08-01T10:00:00Z",
-      "updatedAt": "2025-08-01T10:00:00Z"
+      "updatedAt": "2025-09-09T08:14:31.179Z"
     },
     {
       "id": "202",
