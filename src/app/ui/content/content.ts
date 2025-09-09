@@ -14,6 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { ConfirmService } from '../../shared/services/confirm-service';
 import { NameDialog } from '../../shared/components/name-dialog/name-dialog';
 import { MatDialog } from '@angular/material/dialog';
+import { FilePreviewDialog } from '../../shared/components/file-preview-dialog/file-preview-dialog';
 
 @Component({
   selector: 'app-content',
@@ -108,6 +109,15 @@ export class Content {
   }
 
   openFile(id: number) {
-    console.log('open file', id);
+    const file = this.store.filesById().get(id);
+    if (!file) return;
+
+    this.dialog.open(FilePreviewDialog, {
+      data: { file },
+      panelClass: 'preview-dialog',
+      width: '80vw',
+      maxWidth: '80vw',
+      height: '80vh'
+    })
   }
 }

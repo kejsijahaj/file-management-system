@@ -1,0 +1,37 @@
+<div class="header">
+    <div class="title">{{ data.file.name }}</div>
+    <div class="spacer"></div>
+    <a class="btn" mat-button [href]="data.file.url" download>Download</a>
+    <button class="btn" mat-button (click)="ref.close()">Close</button>
+</div>
+
+<div class="body">
+    <!-- Image Preview -->
+     @if (isImage) {
+        <img class="img" [src]="data.file.url" [alt]="data.file.name" />
+     }
+
+    <!-- PDF Preview -->
+     @if (isPdf) {
+        <iframe class="frame" [src]="safeUrl" title="PDF Preview"></iframe>
+     }
+
+    <!-- TEXT (plain/json/xml etc)-->
+     @if (isText) {
+        @if (textLoading()) {
+            <div class="center">Loading...</div>
+        } @else if (textError()) {
+            <div class="center error">{{textError()}}</div>
+        } @else {
+            <pre class="code">{{ textContent() }}</pre>
+        }
+     }
+
+    <!-- Fallback-->
+     @if (!isImage && !isPdf && !isText) {
+        <div class="center">
+            No preview available.
+            <a [href]="data.file.url" mat-button download>Download</a>
+        </div>
+     }
+</div>

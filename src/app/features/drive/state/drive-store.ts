@@ -417,15 +417,26 @@ export class DriveStore {
   }
 
   // ------- file ops -----
+
+  private fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(file);
+    });
+  }
+
   async uploadFile(file: File) {
     const now = new Date().toISOString();
+    const dataUrl = await this.fileToDataUrl(file);
     const body: Omit<FileItem, 'id'> = {
       userId: this.userId(),
       folderId: this.currentFolderId(),
       name: file.name,
       mime: file.type,
       size: file.size,
-      url: `/assets/uploads/${file.name}`,
+      url: dataUrl,
       createdAt: now,
       updatedAt: now,
     };
