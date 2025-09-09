@@ -65,6 +65,12 @@ export class DriveStore {
         localStorage.setItem('viewMode', this.viewMode());
       }
     });
+
+    effect(() => {
+      this.currentFolderId();
+      this.clearSelection();
+      this.movePicking.set(false);
+    });
   }
 
   // ------- loaders --------
@@ -450,30 +456,6 @@ export class DriveStore {
     this._addFileIndex(created.folderId, created.id);
   }
 
-  async createFile(name: string) {
-    const now = new Date().toISOString();
-    const fileName = name.includes('.') ? name: `${name}.txt`;
-
-    const body: Omit<FileItem, 'id'> = {
-      userId: this.userId(),
-      folderId: this.currentFolderId(),
-      name: fileName,
-      mime: 'text/plain',
-      size: 0,
-      url: `/assets/uploads/${fileName}`,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    const created = await this.api.createFile(body);
-
-    // upset + index
-    const map = clone(this.filesById());
-    map.set(created.id, created);
-    this.filesById.set(map);
-    this._addFileIndex(created.folderId, created.id);
-  }
-
   async renameFile(id: Id, newName: string) {
     const updated = await this.api.patchFile(id, {
       name: newName,
@@ -506,5 +488,117 @@ export class DriveStore {
     map.delete(id);
     this.filesById.set(map);
     this._removeFileIndex(entity.folderId, id);
+  }
+
+  // ------- batch operations -------
+
+  selectedFileIds = signal<Set<Id>>(new Set());
+  selectedFolderIds = signal<Set<Id>>(new Set());
+
+  selectedCount = computed(() => this.selectedFileIds().size + this.selectedFolderIds().size);
+
+  clearSelection() {
+    this.selectedFileIds.set(new Set());
+    this.selectedFolderIds.set(new Set());
+  }
+
+  isFileSelected(id: Id) {
+    return this.selectedFileIds().has(id);
+  }
+
+  isFolderSelected(id: Id) {
+    return this.selectedFolderIds().has(id);
+  }
+
+  toggleFile(id: Id) {
+    const set = new Set(this.selectedFileIds());
+    set.has(id) ? set.delete(id) : set.add(id);
+    this.selectedFileIds.set(set);
+  }
+
+  toggleFolder(id: Id) {
+    const set = new Set(this.selectedFolderIds());
+    set.has(id) ? set.delete(id) : set.add(id);
+    this.selectedFolderIds.set(set);
+  }
+
+  selectAllVisible() {
+    const files = this.searchMode()
+      ? this.searchResults()
+          .filter((h) => h.kind === 'file')
+          .map((h) => h.id)
+      : this.currentFiles().map((f) => f.id);
+    const folders = this.searchMode()
+      ? this.searchResults()
+          .filter((h) => h.kind === 'folder')
+          .map((h) => h.id)
+      : this.currentFolders().map((f) => f.id);
+    this.selectedFileIds.set(new Set(files));
+    this.selectedFolderIds.set(new Set(folders));
+  }
+
+  async deleteSelected() {
+    if (this.selectedCount() === 0) return;
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      await Promise.all([...this.selectedFileIds()].map((id) => this.deleteFile(id)));
+      for (const fid of this.selectedFolderIds()) {
+        await this.deleteFolderFlow(fid);
+      }
+      this.clearSelection();
+    } catch (e: any) {
+      this.error.set(e?.message ?? 'Delete failed');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async moveSelected(targetFolderId: Id) {
+    if (this.selectedCount() === 0) return;
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      await Promise.all([...this.selectedFileIds()].map((id) => this.moveFile(id, targetFolderId)));
+      for (const fid of this.selectedFolderIds()) {
+        await this.moveFolder(fid, targetFolderId);
+      }
+      this.clearSelection();
+    } catch (e: any) {
+      this.error.set(e?.message ?? 'Move failed');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  // move helpers
+
+  movePicking = signal<boolean>(false);
+  moveHint = signal<string>('Pick a folder to move here');
+
+  startMovePick() {
+    this.movePicking.set(true);
+  }
+  cancelMovePick() {
+    this.movePicking.set(false);
+  }
+
+  private async _isInvalidTarget(targetId: Id): Promise<boolean> {
+    for (const fid of this.selectedFolderIds()) {
+      if (targetId === fid) return true;
+
+      const path = await this.api.getFolderPath(targetId);
+      if (path.some((p) => p.id === fid)) return true;
+    }
+    return false;
+  }
+
+  async pickMoveTarget(targetFolderId: Id) {
+    if (!(await this._isInvalidTarget(targetFolderId))) {
+      await this.moveSelected(targetFolderId);
+      this.movePicking.set(false);
+    } else {
+      this.error.set('Cannnot move into the same or descendant folder.');
+    }
   }
 }
