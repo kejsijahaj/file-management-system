@@ -1,38 +1,38 @@
 <ng-template #renderNode let-node>
   <div class="node-row" [class.file]="node.type === 'file'">
     @if (node.type === 'folder') {
-      <button
-        mat-button
-        type="button"
-        (click)="toggle(node)"
-        class="folder-btn"
-        [attr.aria-expanded]="isExpanded(node.id)"
-      >
-        <mat-icon class="chev">{{ isExpanded(node.id) ? 'expand_more' : 'chevron_right' }}</mat-icon>
-        <mat-icon>folder</mat-icon>
-        <span (click)="open(node); $event.stopPropagation()">{{ node.name }}</span>
-        @if (node.loading) {
-          <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
-        }
-      </button>
-
-      @if (isExpanded(node.id)) {
-        <div class="children">
-          @for (child of node.children ?? []; track (child.type + ':' + child.id)) {
-            <ng-container [ngTemplateOutlet]="renderNode"
-                          [ngTemplateOutletContext]="{ $implicit: child }"></ng-container>
-          }
-          @if ((node.children ?? []).length === 0 && node.loaded && !node.loading) {
-            <div class="empty">Empty</div>
-          }
-        </div>
+    <button
+      mat-button
+      type="button"
+      (click)="toggle(node)"
+      class="folder-btn"
+      [attr.aria-expanded]="isExpanded(node.id)"
+    >
+      <mat-icon class="chev">{{ isExpanded(node.id) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+      <mat-icon>folder</mat-icon>
+      <span (click)="open(node); $event.stopPropagation()">{{ node.name }}</span>
+      @if (node.loading) {
+      <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
       }
-    } @else {
-      <button mat-button type="button" class="file-btn" (click)="open(node)">
-        <span class="chev-spacer"></span>
-        <mat-icon>insert_drive_file</mat-icon>
-        <span class="file-name">{{ node.name }}</span>
-      </button>
+    </button>
+
+    @if (isExpanded(node.id)) {
+    <div class="children">
+      @for (child of node.children ?? []; track (child.type + ':' + child.id)) {
+      <ng-container
+        [ngTemplateOutlet]="renderNode"
+        [ngTemplateOutletContext]="{ $implicit: child }"
+      ></ng-container>
+      } @if ((node.children ?? []).length === 0 && node.loaded && !node.loading) {
+      <div class="empty">Empty</div>
+      }
+    </div>
+    } } @else {
+    <button mat-button type="button" class="file-btn" (click)="open(node)">
+      <span class="chev-spacer"></span>
+      <mat-icon>insert_drive_file</mat-icon>
+      <span class="file-name">{{ node.name }}</span>
+    </button>
     }
   </div>
 </ng-template>
@@ -47,14 +47,14 @@
       <mat-icon>create_new_folder</mat-icon>
       <span>New Folder</span>
     </button>
-    <button mat-menu-item (click)="openCreateDialog('file')">
+    <button mat-menu-item (click)="openFilePicker()">
       <mat-icon>note_add</mat-icon>
-      <span>New File</span>
+      <span>Upload File</span>
     </button>
   </mat-menu>
 
-  <ng-container
-    [ngTemplateOutlet]="renderNode"
-    [ngTemplateOutletContext]="{ $implicit: root() }">
+  <input #fileInput type="file" style="display: none" (change)="onFilesPicked($event)" multiple />
+
+  <ng-container [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ $implicit: root() }">
   </ng-container>
 </div>

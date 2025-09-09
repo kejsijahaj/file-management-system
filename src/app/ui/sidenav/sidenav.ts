@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
@@ -44,6 +44,8 @@ export class Sidenav {
   private router = inject(Router);
   private dialog = inject(MatDialog);
   store = inject(DriveStore);
+
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   root = signal<NodeItem>({
     id: '0',
@@ -136,7 +138,7 @@ export class Sidenav {
     }
   }
 
-  // -------- create files and folders --------
+  // -------- upload files and create folders --------
 
   openCreateDialog(type: 'folder' | 'file') {
     const dialogConfig = {
@@ -164,6 +166,25 @@ export class Sidenav {
         // add toast fail
       }
     });
+  }
+
+  openFilePicker() {
+    if (this.fileInput?.nativeElement) this.fileInput.nativeElement.value = '';
+    this.fileInput.nativeElement.click();
+  }
+
+  async onFilesPicked(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    if (!files.length) return;
+
+    try {
+      for (const file of files) {
+        await this.store.uploadFile(file);
+      }
+    } finally {
+      input.value = '';
+    }
   }
 
   // ---------------- helpers ----------------
