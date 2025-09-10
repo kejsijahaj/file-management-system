@@ -73,6 +73,10 @@ export class Content {
     }
   }
 
+  onDeleteSelected() {
+    this.store.deleteSelected();
+  }
+
   async onEditFolder(folder: {id: number; name: string}) {
     const ref = this.dialog.open(NameDialog, {
       width: '400px',

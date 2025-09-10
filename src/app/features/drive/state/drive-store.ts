@@ -48,11 +48,13 @@ export class DriveStore {
     return ids.map((id) => byId.get(id)!).filter(Boolean);
   });
 
+  localFilter = signal<string>('');
+
   currentFiles = computed(() => {
     const ids = this.filesByFolder().get(this.currentFolderId()) || [];
     const byId = this.filesById();
     let rows = ids.map((id) => byId.get(id)!).filter(Boolean);
-    const q = this.query().trim().toLowerCase();
+    const q = this.localFilter().trim().toLowerCase();
     if (q) rows = rows.filter((f) => f.name.toLowerCase().includes(q));
     return rows;
   });
@@ -273,6 +275,8 @@ export class DriveStore {
     const old = this.foldersById().get(id);
     const oldParent = old?.parentId ?? this.currentFolderId();
 
+    // await this.ensureFolderPrimed(targetParentId);
+
     const updated = await this.api.moveFolder(id, targetParentId);
 
     // entity
@@ -470,6 +474,8 @@ export class DriveStore {
     const old = this.filesById().get(id);
     const oldFolder = old?.folderId ?? this.currentFolderId();
 
+    // await this.ensureFolderPrimed(targetFolderId);
+
     const updated = await this.api.moveFile(id, targetFolderId);
 
     const map = clone(this.filesById());
@@ -555,21 +561,48 @@ export class DriveStore {
   }
 
   async moveSelected(targetFolderId: Id) {
-    if (this.selectedCount() === 0) return;
-    this.loading.set(true);
-    this.error.set(null);
-    try {
-      await Promise.all([...this.selectedFileIds()].map((id) => this.moveFile(id, targetFolderId)));
-      for (const fid of this.selectedFolderIds()) {
-        await this.moveFolder(fid, targetFolderId);
-      }
-      this.clearSelection();
-    } catch (e: any) {
-      this.error.set(e?.message ?? 'Move failed');
-    } finally {
-      this.loading.set(false);
+  if (this.selectedCount() === 0) return;
+  this.loading.set(true);
+  this.error.set(null);
+
+  try {
+    // 1) prime destination ONCE
+    await this.ensureFolderPrimed(targetFolderId);
+
+    // remember sources
+    const sourceFileFolders = new Set<number>();
+    for (const id of this.selectedFileIds()) {
+      const f = this.filesById().get(id);
+      if (f) sourceFileFolders.add(f.folderId);
     }
+    const sourceFolderParents = new Set<number>();
+    for (const fid of this.selectedFolderIds()) {
+      const folder = this.foldersById().get(fid);
+      if (folder) sourceFolderParents.add(folder.parentId);
+    }
+
+    // 2) move files sequentially
+    for (const id of this.selectedFileIds()) {
+      await this.moveFile(id, targetFolderId);
+    }
+    // 3) move folders sequentially
+    for (const fid of this.selectedFolderIds()) {
+      await this.moveFolder(fid, targetFolderId);
+    }
+
+    // 4) reconcile
+    const toRefresh = new Set<Id>([targetFolderId, ...sourceFileFolders, ...sourceFolderParents]);
+    for (const fid of toRefresh) {
+      await this.refreshFolderFromServer(fid);
+    }
+
+    this.clearSelection();
+  } catch (e: any) {
+    this.error.set(e?.message ?? 'Move failed');
+  } finally {
+    this.loading.set(false);
   }
+}
 
   // move helpers
 
@@ -600,5 +633,71 @@ export class DriveStore {
     } else {
       this.error.set('Cannnot move into the same or descendant folder.');
     }
+  }
+
+  // Pre-move hydration when an index is missing
+  private async ensureFolderPrimed(folderId: Id) {
+    const hasFilesIdx = this.filesByFolder().has(folderId);
+    const hasChildrenIdx = this.childrenByParent().has(folderId);
+    if (hasFilesIdx && hasChildrenIdx) return;
+
+    const uid = this.userId();
+    const [folders, files] = await Promise.all([
+      this.api.listChildrenFolders(uid, folderId),
+      this.api.listFilesInFolder(uid, folderId),
+    ]);
+
+    const fMap = new Map(this.foldersById());
+    folders.forEach((f) => fMap.set(f.id, f));
+    this.foldersById.set(fMap);
+
+    const fileMap = new Map(this.filesById());
+    files.forEach((f) => fileMap.set(f.id, f));
+    this.filesById.set(fileMap);
+
+    const childIdx = new Map(this.childrenByParent());
+    childIdx.set(
+      folderId,
+      folders.map((f) => f.id)
+    );
+    this.childrenByParent.set(childIdx);
+
+    const filesIdx = new Map(this.filesByFolder());
+    filesIdx.set(
+      folderId,
+      files.map((f) => f.id)
+    );
+    this.filesByFolder.set(filesIdx);
+  }
+
+  // Post-move reconciliation to authoritative server state
+  private async refreshFolderFromServer(folderId: Id) {
+    const uid = this.userId();
+    const [folders, files] = await Promise.all([
+      this.api.listChildrenFolders(uid, folderId),
+      this.api.listFilesInFolder(uid, folderId),
+    ]);
+
+    const fMap = new Map(this.foldersById());
+    folders.forEach((f) => fMap.set(f.id, f));
+    this.foldersById.set(fMap);
+
+    const fileMap = new Map(this.filesById());
+    files.forEach((f) => fileMap.set(f.id, f));
+    this.filesById.set(fileMap);
+
+    const childIdx = new Map(this.childrenByParent());
+    childIdx.set(
+      folderId,
+      folders.map((f) => f.id)
+    );
+    this.childrenByParent.set(childIdx);
+
+    const filesIdx = new Map(this.filesByFolder());
+    filesIdx.set(
+      folderId,
+      files.map((f) => f.id)
+    );
+    this.filesByFolder.set(filesIdx);
   }
 }

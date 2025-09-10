@@ -81,10 +81,13 @@
 }
 .row {
   display: grid;
-  grid-template-columns: 3fr 1fr 1fr 1fr 0fr 0fr;
+  grid-template-columns: auto 3fr 1fr 1fr 1fr auto auto;
   align-items: center;
   padding: 10px 12px;
   border-top: 1px solid #eee;
+}
+.row .col.select {
+  width: 32px;
 }
 .row.header {
   font-weight: 600;
@@ -107,3 +110,13 @@
 .error {
   color: #b00020;
 }
+
+.batch-toolbar {
+  display:flex; align-items:center; gap:8px;
+  margin: 8px 12px 0; padding:8px 12px;
+  border:1px solid #e5e5e5; border-radius:8px; background:#fff;
+}
+.batch-toolbar .btn {
+  border: 1px solid #ddd; background:#fff; padding:6px 10px; border-radius:6px; cursor:pointer;
+}
+.batch-toolbar .hint { color:#1a73e8; }

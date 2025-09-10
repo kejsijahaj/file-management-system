@@ -5,7 +5,22 @@
   </div>
   } @else if (store.error()) {
   <div class="center-error">{{ store.error() }}</div>
-  } @else {
+  } @else { @if (store.selectedCount() > 0) {
+  <div class="batch-toolbar">
+    <span>{{ store.selectedCount() }} selected</span>
+
+    @if (!store.movePicking()) {
+    <button (click)="store.startMovePick()">Move</button>
+    } @else {
+    <strong class="hint">{{ store.moveHint() }}</strong>
+    <button (click)="store.cancelMovePick()">Cancel</button>
+    }
+
+    <button (click)="onDeleteSelected()">Delete</button>
+    <button (click)="store.selectAllVisible()">Select All</button>
+    <button (click)="store.clearSelection()">Clear</button>
+  </div>
+  }
 
   <!----------- search mode --------->
   @if (store.searchMode()) {
@@ -33,12 +48,15 @@
         } @else { - }
       </div>
       <button
-          class="delete-button"
-          mat-icon-button
-          (click)="hit.kind === 'folder' ? onDeleteFolder(hit.id) : onDeleteFile(hit.id, hit.name); $event.stopPropagation()"
-        >
-          <mat-icon>delete</mat-icon>
-        </button>
+        class="delete-button"
+        mat-icon-button
+        (click)="
+          hit.kind === 'folder' ? onDeleteFolder(hit.id) : onDeleteFile(hit.id, hit.name);
+          $event.stopPropagation()
+        "
+      >
+        <mat-icon>delete</mat-icon>
+      </button>
     </div>
     } @if (store.searchResults().length === 0) {
     <div class="row empty">No results found</div>
@@ -51,9 +69,24 @@
   @if (store.viewMode() === 'grid') {
   <div class="grid">
     @for (f of store.currentFolders(); track f.id) {
-    <div class="tile folder" (click)="go(f.id)">
-      <mat-icon>folder</mat-icon>
-      <div class="name">{{ f.name }}</div>
+    <div class="tile folder" [class.selected]="store.isFolderSelected(f.id)">
+      <label class="check">
+        <input
+          type="checkbox"
+          [checked]="store.isFolderSelected(f.id)"
+          (click)="$event.stopPropagation()"
+          (change)="store.toggleFolder(f.id)"
+        />
+      </label>
+
+      <div
+        class="tile-body"
+        [class.move-target]="store.movePicking()"
+        (click)="store.movePicking() ? store.pickMoveTarget(f.id) : go(f.id)"
+      >
+        <mat-icon>folder</mat-icon>
+        <div class="name">{{ f.name }}</div>
+      </div>
     </div>
     } @for (fl of store.currentFiles(); track fl.id) {
     <div class="tile file" (click)="openFile(fl.id)">
@@ -68,6 +101,7 @@
   } @else {
   <div class="list">
     <div class="row header">
+      <div class="col select"></div>
       <div class="col name">Name</div>
       <div class="col type">Type</div>
       <div class="col size">Size</div>
@@ -77,7 +111,21 @@
 
     @for (f of store.currentFolders(); track f.id) {
     <div class="row item">
-      <div class="col name" (click)="go(f.id)"><mat-icon class="mr">folder</mat-icon> {{ f.name }}</div>
+      <div class="col select">
+        <input
+          type="checkbox"
+          [checked]="store.isFolderSelected(f.id)"
+          (change)="store.toggleFolder(f.id)"
+          (click)="$event.stopPropagation()"
+        />
+      </div>
+      <div
+        class="col name"
+        [class.move-target]="store.movePicking()"
+        (click)="store.movePicking() ? store.pickMoveTarget(f.id) : go(f.id)"
+      >
+        <mat-icon class="mr">folder</mat-icon> {{ f.name }}
+      </div>
       <div class="col type">Folder</div>
       <div class="col size">-</div>
       <div class="col updated">{{ f.createdAt | date : 'mediumDate' }}</div>
@@ -94,7 +142,17 @@
     </div>
     } @for (fl of store.currentFiles(); track fl.id) {
     <div class="row item">
-      <div class="col name" (click)="openFile(fl.id)"><mat-icon class="mr">insert_drive_file</mat-icon> {{ fl.name }}</div>
+      <div class="col select">
+        <input
+          type="checkbox"
+          [checked]="store.isFileSelected(fl.id)"
+          (change)="store.toggleFile(fl.id)"
+          (click)="$event.stopPropagation()"
+        />
+      </div>
+      <div class="col name" (click)="openFile(fl.id)">
+        <mat-icon class="mr">insert_drive_file</mat-icon> {{ fl.name }}
+      </div>
       <div class="col type">{{ fl.mime | filePipe }}</div>
       <div class="col size">{{ fl.size | sizePipe }}</div>
       <div class="col updated">{{ fl.updatedAt | date : 'mediumDate' }}</div>

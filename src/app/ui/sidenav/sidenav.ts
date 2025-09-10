@@ -78,11 +78,12 @@ export class Sidenav {
   }
 
   async open(node: NodeItem) {
-    if (node.type === 'folder') {
-      await this.router.navigate(['/drive/folder', node.id]);
+    if (node.type !== 'folder') return;
+    if (this.store.movePicking()) {
+      await this.store.pickMoveTarget(Number(node.id));
       return;
     }
-    // TODO: file preview / download
+    await this.router.navigate(['/drive/folder', node.id]);
   }
 
   // ---------------- data loading ----------------
