@@ -51,6 +51,7 @@ export class DriveStore {
   localFilter = signal<string>('');
 
   currentFiles = computed(() => {
+    console.log(this.currentFolderId(), 'insideCompute');
     const ids = this.filesByFolder().get(this.currentFolderId()) || [];
     const byId = this.filesById();
     let rows = ids.map((id) => byId.get(id)!).filter(Boolean);
@@ -77,6 +78,7 @@ export class DriveStore {
 
   // ------- loaders --------
   async load(folderId: Id = this.currentFolderId()) {
+        console.log(this.currentFolderId(),'current');
     this.loading.set(true);
     this.error.set(null);
     try {
@@ -252,7 +254,6 @@ export class DriveStore {
     const now = new Date().toISOString();
     const body = { userId: this.userId(), name, parentId: this.currentFolderId(), createdAt: now };
     const created = await this.api.createFolder(body);
-
     // upsert and index
     const fMap = clone(this.foldersById());
     fMap.set(created.id, created);
@@ -438,6 +439,7 @@ export class DriveStore {
   }
 
   async uploadFile(file: File) {
+    console.log(this.currentFolderId(),'upload file');
     const now = new Date().toISOString();
     const dataUrl = await this.fileToDataUrl(file);
     const body: Omit<FileItem, 'id'> = {
