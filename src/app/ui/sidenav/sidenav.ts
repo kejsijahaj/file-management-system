@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { ApiService } from '../../core/api/api-service';
 import { DriveStore } from '../../features/drive/state/drive-store';
@@ -44,6 +45,7 @@ export class Sidenav {
   private router = inject(Router);
   private dialog = inject(MatDialog);
   store = inject(DriveStore);
+  snackbar = inject(MatSnackBar);
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -159,10 +161,9 @@ export class Sidenav {
         if (type === 'folder') {
           await this.store.createFolder(name);
         }
-        // add toast success
       } catch (error) {
         console.error(`Failed to create ${type}:`, error);
-        // add toast fail
+        this.snackbar.open(`Failed to create folder`, '',{duration: 800});
       }
     });
   }

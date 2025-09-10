@@ -10,6 +10,7 @@ import { SizePipe } from '../../shared/pipes/size-pipe';
 import { DriveStore } from '../../features/drive/state/drive-store';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { ConfirmService } from '../../shared/services/confirm-service';
 import { NameDialog } from '../../shared/components/name-dialog/name-dialog';
@@ -36,6 +37,7 @@ export class Content {
   private confirm = inject(ConfirmService);
   private dialog = inject(MatDialog)
   store = inject(DriveStore);
+  snackbar = inject(MatSnackBar);
 
   // listen to id changes
   folderId = toSignal(this.route.paramMap.pipe(map((p) => Number(p.get('id') ?? 0))), {
@@ -59,7 +61,7 @@ export class Content {
         await this.store.deleteFile(id);
       } catch (error) {
         console.error('Error deleting file:', error);
-        // can add toaster notif
+        this.snackbar.open(`Couldn't delete file`, '',{duration: 800});
       }
     }
   }
@@ -69,7 +71,7 @@ export class Content {
       await this.store.deleteFolderFlow(id);
     } catch (error) {
       console.error('Error deleting folder:', error);
-      // can add toaster notif
+      this.snackbar.open(`Couldn't delete folder`, '',{duration: 800});
     }
   }
 
