@@ -27,8 +27,13 @@
         }
      }
 
+     <!-- Video Preview -->
+     @if (isVideo) {
+        <video class="media" controls [src]="data.file.url"></video>
+      }
+      
     <!-- Fallback-->
-     @if (!isImage && !isPdf && !isText) {
+     @if (!isImage && !isPdf && !isText && !isVideo) {
         <div class="center">
             No preview available.
             <a [href]="data.file.url" mat-button download>Download</a>

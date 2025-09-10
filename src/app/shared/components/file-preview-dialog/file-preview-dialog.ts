@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatDialogModule, MAT_DIALOG_DATA,MatDialogRef } from '@angular/material/dialog';
+import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { HttpClient } from '@angular/common/http';
@@ -20,12 +20,12 @@ type PreviewData = {
   selector: 'app-file-preview-dialog',
   imports: [CommonModule, MatDialogModule, MatButtonModule],
   templateUrl: './file-preview-dialog.html',
-  styleUrl: './file-preview-dialog.scss'
+  styleUrl: './file-preview-dialog.scss',
 })
 export class FilePreviewDialog {
   data: PreviewData = inject(MAT_DIALOG_DATA);
   ref = inject(MatDialogRef<FilePreviewDialog>);
-  sanitizer = inject(DomSanitizer)
+  sanitizer = inject(DomSanitizer);
   http = inject(HttpClient);
 
   safeUrl: SafeResourceUrl | null = null;
@@ -40,7 +40,14 @@ export class FilePreviewDialog {
 
   get isText() {
     const m = this.data.file.mime || '';
-    return m.startsWith('text/') || ['application/json','application/xml','application/yaml'].includes(m);
+    return (
+      m.startsWith('text/') ||
+      ['application/json', 'application/xml', 'application/yaml'].includes(m)
+    );
+  }
+
+  get isVideo() {
+    return this.data.file.mime?.startsWith('video/');
   }
 
   textLoading = signal(false);
