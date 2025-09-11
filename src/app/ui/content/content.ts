@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 
 import { FilePipe } from '../../shared/pipes/file-pipe';
 import { SizePipe } from '../../shared/pipes/size-pipe';
@@ -17,6 +18,8 @@ import { NameDialog } from '../../shared/components/name-dialog/name-dialog';
 import { MatDialog } from '@angular/material/dialog';
 import { FilePreviewDialog } from '../../shared/components/file-preview-dialog/file-preview-dialog';
 
+type DragItem = { kind: 'file' | 'folder'; id: string; parentId?: string };
+
 @Component({
   selector: 'app-content',
   standalone: true,
@@ -27,6 +30,7 @@ import { FilePreviewDialog } from '../../shared/components/file-preview-dialog/f
     MatProgressSpinnerModule,
     FilePipe,
     SizePipe,
+    DragDropModule,
   ],
   templateUrl: './content.html',
   styleUrl: './content.scss',
@@ -128,5 +132,49 @@ export class Content {
       maxWidth: '80vw',
       height: '80vh',
     });
+  }
+
+  // --------- drag and drop operations --------
+
+  acceptDragOnFolder = (drag: any, drop: any) => {
+    const data = drag.data as DragItem | undefined;
+    if (!data) return false;
+
+    return data.kind === 'file' || data.kind === 'folder';
+  };
+
+  async onDropOnFolder(targetFolderId: string, event: CdkDragDrop<any>) {
+    const data = event.item?.data as DragItem | undefined;
+    if (!data) return;
+
+    const selectedFileIds = this.store.selectedFileIds();
+    const selectedFolderIds = this.store.selectedFolderIds();
+
+    const isDraggingSelectedFile = data.kind === 'file' && selectedFileIds.has(data.id);
+    const isDraggingSelectedFolder = data.kind === 'folder' && selectedFolderIds.has(data.id);
+    const hasBatch = selectedFileIds.size + selectedFolderIds.size > 0;
+
+    try {
+      if (data.kind === 'folder') {
+        const invalid = await this.store.isInvalidFolderMoveSingle(data.id, targetFolderId);
+        if (invalid) return;
+      }
+
+      if (hasBatch && (isDraggingSelectedFile || isDraggingSelectedFolder)) {
+        await this.store.moveSelected(targetFolderId);
+        return;
+      }
+
+      if (data.kind === 'file') {
+        if (data.parentId === targetFolderId) return; // no op
+        await this.store.moveFile(data.id, targetFolderId);
+      } else {
+        if (data.id === targetFolderId) return; // no op
+        await this.store.moveFolder(data.id, targetFolderId);
+      }
+    } catch (e) {
+      console.error('move failed', e);
+      // add snackbar notif
+    }
   }
 }

@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -26,6 +27,8 @@ interface NodeItem {
   mime?: string;
 }
 
+type DragItem = { kind: 'file' | 'folder'; id: string; parentId?: string };
+
 @Component({
   selector: 'app-sidenav',
   standalone: true,
@@ -36,6 +39,7 @@ interface NodeItem {
     MatProgressSpinnerModule,
     MatMenuItem,
     MatMenuModule,
+    DragDropModule
   ],
   templateUrl: './sidenav.html',
   styleUrl: './sidenav.scss',
@@ -173,4 +177,48 @@ export class Sidenav {
 
   // trackBy
   trackNode = (_: number, n: NodeItem) => n.type + ':' + n.id;
+
+    // --------- drag and drop operations --------
+
+  acceptDragOnFolder = (drag: any, drop: any) => {
+    const data = drag.data as DragItem | undefined;
+    if (!data) return false;
+
+    return data.kind === 'file' || data.kind === 'folder';
+  };
+
+  async onDropOnFolder(targetFolderId: string, event: CdkDragDrop<any>) {
+    const data = event.item?.data as DragItem | undefined;
+    if (!data) return;
+
+    const selectedFileIds = this.store.selectedFileIds();
+    const selectedFolderIds = this.store.selectedFolderIds();
+
+    const isDraggingSelectedFile = data.kind === 'file' && selectedFileIds.has(data.id);
+    const isDraggingSelectedFolder = data.kind === 'folder' && selectedFolderIds.has(data.id);
+    const hasBatch = selectedFileIds.size + selectedFolderIds.size > 0;
+
+    try {
+      if (data.kind === 'folder') {
+        const invalid = await this.store.isInvalidFolderMoveSingle(data.id, targetFolderId);
+        if (invalid) return;
+      }
+
+      if (hasBatch && (isDraggingSelectedFile || isDraggingSelectedFolder)) {
+        await this.store.moveSelected(targetFolderId);
+        return;
+      }
+
+      if (data.kind === 'file') {
+        if (data.parentId === targetFolderId) return; // no op
+        await this.store.moveFile(data.id, targetFolderId);
+      } else {
+        if (data.id === targetFolderId) return; // no op
+        await this.store.moveFolder(data.id, targetFolderId);
+      }
+    } catch (e) {
+      console.error('move failed', e);
+      // add snackbar notif
+    }
+  }
 }

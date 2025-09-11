@@ -718,4 +718,16 @@ export class DriveStore {
     );
     this.filesByFolder.set(filesIdx);
   }
+
+  private async _isInvalidTargetForSingleFolder(folderId: string, targetId: string) {
+    if (folderId === targetId) return true;
+    const path = await this.api.getFolderPath(targetId);
+    return path.some((p) => String(p.id) === String(folderId));
+  }
+
+  async isInvalidFolderMoveSingle(folderId: string, targetFolderId: string): Promise<boolean> {
+    if (String(folderId) === String(targetFolderId)) return true;
+    const path = await this.api.getFolderPath(String(targetFolderId));
+    return path.some((p) => String(p.id) === String(folderId));
+  }
 }

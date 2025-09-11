@@ -69,7 +69,15 @@
   @if (store.viewMode() === 'grid') {
   <div class="grid">
     @for (f of store.currentFolders(); track f.id) {
-    <div class="tile folder" [class.selected]="store.isFolderSelected(f.id)">
+    <div
+      class="tile folder"
+      [class.selected]="store.isFolderSelected(f.id)"
+      cdkDropList
+      [cdkDropListEnterPredicate]="acceptDragOnFolder"
+      (cdkDropListDropped)="onDropOnFolder(f.id, $event)"
+      cdkDrag
+      [cdkDragData]="{ kind: 'folder', id: f.id, parentId: f.parentId }"
+    >
       <label class="check">
         <input
           type="checkbox"
@@ -89,7 +97,13 @@
       </div>
     </div>
     } @for (fl of store.currentFiles(); track fl.id) {
-    <div class="tile file" (click)="openFile(fl.id)">
+    <div
+      class="tile file"
+      (click)="openFile(fl.id)"
+      [class.selected]="store.isFileSelected(fl.id)"
+      cdkDrag
+      [cdkDragData]="{ kind: 'file', id: fl.id, parentId: fl.folderId }"
+    >
       <mat-icon>insert_drive_file</mat-icon>
       <div class="name">{{ fl.name }}</div>
     </div>
@@ -110,7 +124,14 @@
     </div>
 
     @for (f of store.currentFolders(); track f.id) {
-    <div class="row item">
+    <div
+      class="row item"
+      cdkDropList
+      [cdkDropListEnterPredicate]="acceptDragOnFolder"
+      (cdkDropListDropped)="onDropOnFolder(f.id, $event)"
+      cdkDrag
+      [cdkDragData]="{ kind: 'folder', id: f.id, parentId: f.parentId }"
+    >
       <div class="col select">
         <input
           type="checkbox"
@@ -141,7 +162,11 @@
       </button>
     </div>
     } @for (fl of store.currentFiles(); track fl.id) {
-    <div class="row item">
+    <div
+      class="row item"
+      cdkDrag
+      [cdkDragData]="{ kind: 'file', id: fl.id, parentId: fl.folderId }"
+    >
       <div class="col select">
         <input
           type="checkbox"

@@ -56,6 +56,11 @@
         class="folder-btn"
         [attr.aria-expanded]="isExpanded(node.id)"
         (click)="toggleFolder(node.id)"
+        cdkDropList
+        [cdkDropListEnterPredicate]="acceptDragOnFolder"
+        (cdkDropListDropped)="onDropOnFolder(node.id, $event)"
+        cdkDrag
+        [cdkDragData]="{kind: 'folder', id: node.id}"
       >
         <mat-icon class="chev">{{ isExpanded(node.id) ? 'expand_more' : 'chevron_right' }}</mat-icon>
         <mat-icon>folder</mat-icon>
