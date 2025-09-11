@@ -35,13 +35,13 @@ export class Content {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private confirm = inject(ConfirmService);
-  private dialog = inject(MatDialog)
+  private dialog = inject(MatDialog);
   store = inject(DriveStore);
   snackbar = inject(MatSnackBar);
 
   // listen to id changes
-  folderId = toSignal(this.route.paramMap.pipe(map((p) => Number(p.get('id') ?? 0))), {
-    initialValue: 0,
+  folderId = toSignal(this.route.paramMap.pipe(map((p) => p.get('id') ?? '0')), {
+    initialValue: '0',
   });
   parent: any;
 
@@ -53,25 +53,28 @@ export class Content {
     });
   }
 
-  async onDeleteFile(id: number, name: string): Promise<void> {
-    const confirmed = await this.confirm.confirm(`Delete file`, `Are you sure you want to delete "${name}"? This action cannot be undone.`);
+  async onDeleteFile(id: string, name: string): Promise<void> {
+    const confirmed = await this.confirm.confirm(
+      `Delete file`,
+      `Are you sure you want to delete "${name}"? This action cannot be undone.`
+    );
 
     if (confirmed) {
       try {
         await this.store.deleteFile(id);
       } catch (error) {
         console.error('Error deleting file:', error);
-        this.snackbar.open(`Couldn't delete file`, '',{duration: 800});
+        this.snackbar.open(`Couldn't delete file`, '', { duration: 800 });
       }
     }
   }
 
-  async onDeleteFolder(id: number): Promise<void> {
+  async onDeleteFolder(id: string): Promise<void> {
     try {
       await this.store.deleteFolderFlow(id);
     } catch (error) {
       console.error('Error deleting folder:', error);
-      this.snackbar.open(`Couldn't delete folder`, '',{duration: 800});
+      this.snackbar.open(`Couldn't delete folder`, '', { duration: 800 });
     }
   }
 
@@ -79,30 +82,30 @@ export class Content {
     this.store.deleteSelected();
   }
 
-  async onEditFolder(folder: {id: number; name: string}) {
+  async onEditFolder(folder: { id: string; name: string }) {
     const ref = this.dialog.open(NameDialog, {
       width: '400px',
       data: {
         title: 'Rename Folder',
         label: 'New Name',
         placeholder: folder.name,
-        confirm: 'Rename'
-      }
+        confirm: 'Rename',
+      },
     });
     const newName: string | undefined = await firstValueFrom(ref.afterClosed());
     if (!newName || newName.trim() === '' || newName === folder.name) return;
     await this.store.renameFolder(folder.id, newName.trim());
   }
 
-  async onEditFile(file: {id: number; name: string}) {
+  async onEditFile(file: { id: string; name: string }) {
     const ref = this.dialog.open(NameDialog, {
       width: '400px',
       data: {
         title: 'Rename File',
         label: 'New Name',
         placeholder: file.name,
-        confirm: 'Rename'
-      }
+        confirm: 'Rename',
+      },
     });
     const newName: string | undefined = await firstValueFrom(ref.afterClosed());
     if (!newName || newName.trim() === '' || newName === file.name) return;
@@ -110,11 +113,11 @@ export class Content {
     await this.store.renameFile(file.id, newName.trim());
   }
 
-  go(id: number) {
+  go(id: string) {
     this.router.navigate(['/drive/folder', id]);
   }
 
-  openFile(id: number) {
+  openFile(id: string) {
     const file = this.store.filesById().get(id);
     if (!file) return;
 
@@ -123,7 +126,7 @@ export class Content {
       panelClass: 'preview-dialog',
       width: '80vw',
       maxWidth: '80vw',
-      height: '80vh'
-    })
+      height: '80vh',
+    });
   }
 }

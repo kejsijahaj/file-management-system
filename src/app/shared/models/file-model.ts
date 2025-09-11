@@ -1,7 +1,7 @@
 export interface FileItem {
-    id: number;
-    userId: number;
-    folderId: number;
+    id: string;
+    userId: string;
+    folderId: string;
     name: string;
     mime: string;
     size: number;

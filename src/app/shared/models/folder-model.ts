@@ -1,7 +1,7 @@
 export interface Folder {
-    id: number;
-    userId: number;
+    id: string;
+    userId: string;
     name: string;
-    parentId: number;
+    parentId: string;
     createdAt: string;
 }

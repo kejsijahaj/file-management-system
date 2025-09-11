@@ -82,7 +82,7 @@ export class Sidenav {
   async open(node: NodeItem) {
     if (node.type !== 'folder') return;
     if (this.store.movePicking()) {
-      await this.store.pickMoveTarget(Number(node.id));
+      await this.store.pickMoveTarget(node.id);
       return;
     }
     await this.router.navigate(['/drive/folder', node.id]);
@@ -98,8 +98,8 @@ export class Sidenav {
     });
 
     try {
-      const uid = Number(this.store.userId());
-      const parent = Number(id);
+      const uid = this.store.userId();
+      const parent = id;
 
       const [folders, files] = await Promise.all([
         this.api.listChildrenFolders(uid, parent),

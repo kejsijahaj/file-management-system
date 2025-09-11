@@ -4,15 +4,15 @@ import { Folder } from '../../../shared/models/folder-model';
 import { FileItem } from '../../../shared/models/file-model';
 import { ConfirmService } from '../../../shared/services/confirm-service';
 
-type Id = number;
+type Id = string;
 type SearchHit =
-  | { kind: 'folder'; id: number; name: string; parentId: number }
+  | { kind: 'folder'; id: string; name: string; parentId: string }
   | {
       parentId: any;
       kind: 'file';
-      id: number;
+      id: string;
       name: string;
-      folderId: number;
+      folderId: string;
       mime?: string;
       size?: number;
       updatedAt?: string;
@@ -24,8 +24,8 @@ const clone = <K, V>(m: Map<K, V>) => new Map<K, V>(m);
 @Injectable({ providedIn: 'root' })
 export class DriveStore {
   //session
-  userId = signal<Id>(1); // set after login
-  currentFolderId = signal<Id>(0); // root
+  userId = signal<string>('1'); // set after login
+  currentFolderId = signal<Id>('0'); // root
 
   //UI
   viewMode = signal<'grid' | 'list'>((localStorage.getItem('viewMode') as any) || 'grid');
@@ -36,6 +36,25 @@ export class DriveStore {
   //normalized state
   foldersById = signal<Map<Id, Folder>>(new Map());
   filesById = signal<Map<Id, FileItem>>(new Map());
+
+  private sid(v: unknown): string {
+    return String(v);
+  }
+
+  private nFolder = (f: any): Folder => ({
+    ...f,
+    id: this.sid(f.id),
+    userId: Number(f.userId),
+    parentId: this.sid(f.parentId),
+  });
+
+  private nFile = (f: any): FileItem => ({
+    ...f,
+    id: this.sid(f.id),
+    userId: Number(f.userId),
+    folderId: this.sid(f.folderId),
+    size: Number(f.size ?? 0),
+  });
 
   //fast lookups
   childrenByParent = signal<Map<Id, Id[]>>(new Map()); // parent -> folder
@@ -51,12 +70,12 @@ export class DriveStore {
   localFilter = signal<string>('');
 
   currentFiles = computed(() => {
-    console.log(this.currentFolderId(), 'insideCompute');
+    // console.log(this.currentFolderId(), 'insideCompute');
     const ids = this.filesByFolder().get(this.currentFolderId()) || [];
     const byId = this.filesById();
     let rows = ids.map((id) => byId.get(id)!).filter(Boolean);
     const q = this.localFilter().trim().toLowerCase();
-    if (q) rows = rows.filter((f) => f.name.toLowerCase().includes(q));
+    if (q) rows = rows.filter((f) => f.name?.toLowerCase().includes(q));
     return rows;
   });
 
@@ -78,7 +97,7 @@ export class DriveStore {
 
   // ------- loaders --------
   async load(folderId: Id = this.currentFolderId()) {
-        console.log(this.currentFolderId(),'current');
+    console.log(this.currentFolderId(), 'current');
     this.loading.set(true);
     this.error.set(null);
     try {
@@ -86,33 +105,37 @@ export class DriveStore {
       const uid = this.userId();
 
       // parallel reads
-      const [folders, files, path] = await Promise.all([
+      const [foldersRaw, filesRaw, pathRaw] = await Promise.all([
         this.api.listChildrenFolders(uid, folderId),
         this.api.listFilesInFolder(uid, folderId),
-        folderId === 0 ? Promise.resolve([]) : this.api.getFolderPath(folderId),
+        folderId === '0' ? Promise.resolve([]) : this.api.getFolderPath(folderId),
       ]);
 
+      const folders = foldersRaw.map(this.nFolder);
+      const files = filesRaw.map(this.nFile);
+      const path = pathRaw.map(this.nFolder);
+
       // upsert folders
-      const fMap = clone(this.foldersById());
-      for (const f of folders) fMap.set(f.id, f);
+      const fMap = new Map(this.foldersById());
+      folders.forEach((f) => fMap.set(f.id, f));
       this.foldersById.set(fMap);
 
       // upsert files
-      const fileMap = clone(this.filesById());
-      for (const f of files) fileMap.set(f.id, f);
+      const fileMap = new Map(this.filesById());
+      files.forEach((f) => fileMap.set(f.id, f));
       this.filesById.set(fileMap);
 
       // set indexes
-      const childIdx = clone(this.childrenByParent());
+      const childIdx = new Map(this.childrenByParent());
       childIdx.set(
-        folderId,
+        this.currentFolderId(),
         folders.map((f) => f.id)
       );
       this.childrenByParent.set(childIdx);
 
-      const filesIdx = clone(this.filesByFolder());
+      const filesIdx = new Map(this.filesByFolder());
       filesIdx.set(
-        folderId,
+        this.currentFolderId(),
         files.map((f) => f.id)
       );
       this.filesByFolder.set(filesIdx);
@@ -251,11 +274,14 @@ export class DriveStore {
 
   // ------ folder ops --------
   async createFolder(name: string) {
-    const now = new Date().toISOString();
-    const body = { userId: this.userId(), name, parentId: this.currentFolderId(), createdAt: now };
-    const created = await this.api.createFolder(body);
-    // upsert and index
-    const fMap = clone(this.foldersById());
+    const body = {
+      userId: this.userId(),
+      name,
+      parentId: this.currentFolderId(),
+      createdAt: new Date().toISOString(),
+    };
+    const created = this.nFolder(await this.api.createFolder(body));
+    const fMap = new Map(this.foldersById());
     fMap.set(created.id, created);
     this.foldersById.set(fMap);
     this._addChild(created.parentId, created.id);
@@ -272,27 +298,14 @@ export class DriveStore {
   }
 
   async moveFolder(id: Id, targetParentId: Id) {
-    // read old parent
     const old = this.foldersById().get(id);
     const oldParent = old?.parentId ?? this.currentFolderId();
-
-    // await this.ensureFolderPrimed(targetParentId);
-
-    const updated = await this.api.moveFolder(id, targetParentId);
-
-    // entity
-    const fMap = clone(this.foldersById());
-    fMap.set(id, updated);
+    const updated = this.nFolder(await this.api.moveFolder(id, targetParentId));
+    const fMap = new Map(this.foldersById());
+    fMap.set(updated.id, updated);
     this.foldersById.set(fMap);
-
-    // reindex
     this._removeChild(oldParent, id);
     this._addChild(targetParentId, id);
-
-    // breadcrumb refresh
-    if (id === this.currentFolderId()) {
-      this.breadcrumb.set(await this.api.getFolderPath(id));
-    }
   }
 
   async deleteFolderFlow(id: Id) {
@@ -342,7 +355,7 @@ export class DriveStore {
 
     const queue: Array<{ id: Id; depth: number }> = [{ id: rootId, depth: 0 }];
     depths.set(rootId, 0);
-    parentOf.set(rootId, this.foldersById().get(rootId)?.parentId ?? 0);
+    parentOf.set(rootId, this.foldersById().get(rootId)?.parentId ?? '0');
 
     while (queue.length) {
       const { id, depth } = queue.shift()!;
@@ -390,7 +403,7 @@ export class DriveStore {
       fm.delete(fid);
       this.foldersById.set(fm);
 
-      const parentId = parentOf.get(fid) ?? 0;
+      const parentId = parentOf.get(fid) ?? '0';
       this._removeChild(parentId, fid);
     }
   }
@@ -439,12 +452,11 @@ export class DriveStore {
   }
 
   async uploadFile(file: File) {
-    console.log(this.currentFolderId(),'upload file');
     const now = new Date().toISOString();
     const dataUrl = await this.fileToDataUrl(file);
     const body: Omit<FileItem, 'id'> = {
       userId: this.userId(),
-      folderId: this.currentFolderId(),
+      folderId: this.currentFolderId(), // string
       name: file.name,
       mime: file.type,
       size: file.size,
@@ -452,11 +464,8 @@ export class DriveStore {
       createdAt: now,
       updatedAt: now,
     };
-
-    const created = await this.api.createFile(body);
-
-    // upset + index
-    const map = clone(this.filesById());
+    const created = this.nFile(await this.api.createFile(body));
+    const map = new Map(this.filesById());
     map.set(created.id, created);
     this.filesById.set(map);
     this._addFileIndex(created.folderId, created.id);
@@ -475,13 +484,9 @@ export class DriveStore {
   async moveFile(id: Id, targetFolderId: Id) {
     const old = this.filesById().get(id);
     const oldFolder = old?.folderId ?? this.currentFolderId();
-
-    // await this.ensureFolderPrimed(targetFolderId);
-
-    const updated = await this.api.moveFile(id, targetFolderId);
-
-    const map = clone(this.filesById());
-    map.set(id, updated);
+    const updated = this.nFile(await this.api.moveFile(id, targetFolderId));
+    const map = new Map(this.filesById());
+    map.set(updated.id, updated);
     this.filesById.set(map);
     this._removeFileIndex(oldFolder, id);
     this._addFileIndex(targetFolderId, id);
@@ -563,48 +568,48 @@ export class DriveStore {
   }
 
   async moveSelected(targetFolderId: Id) {
-  if (this.selectedCount() === 0) return;
-  this.loading.set(true);
-  this.error.set(null);
+    if (this.selectedCount() === 0) return;
+    this.loading.set(true);
+    this.error.set(null);
 
-  try {
-    // 1) prime destination ONCE
-    await this.ensureFolderPrimed(targetFolderId);
+    try {
+      // 1) prime destination ONCE
+      await this.ensureFolderPrimed(targetFolderId);
 
-    // remember sources
-    const sourceFileFolders = new Set<number>();
-    for (const id of this.selectedFileIds()) {
-      const f = this.filesById().get(id);
-      if (f) sourceFileFolders.add(f.folderId);
-    }
-    const sourceFolderParents = new Set<number>();
-    for (const fid of this.selectedFolderIds()) {
-      const folder = this.foldersById().get(fid);
-      if (folder) sourceFolderParents.add(folder.parentId);
-    }
+      // remember sources
+      const sourceFileFolders = new Set<string>();
+      for (const id of this.selectedFileIds()) {
+        const f = this.filesById().get(id);
+        if (f) sourceFileFolders.add(f.folderId);
+      }
+      const sourceFolderParents = new Set<string>();
+      for (const fid of this.selectedFolderIds()) {
+        const folder = this.foldersById().get(fid);
+        if (folder) sourceFolderParents.add(folder.parentId);
+      }
 
-    // 2) move files sequentially
-    for (const id of this.selectedFileIds()) {
-      await this.moveFile(id, targetFolderId);
-    }
-    // 3) move folders sequentially
-    for (const fid of this.selectedFolderIds()) {
-      await this.moveFolder(fid, targetFolderId);
-    }
+      // 2) move files sequentially
+      for (const id of this.selectedFileIds()) {
+        await this.moveFile(id, targetFolderId);
+      }
+      // 3) move folders sequentially
+      for (const fid of this.selectedFolderIds()) {
+        await this.moveFolder(fid, targetFolderId);
+      }
 
-    // 4) reconcile
-    const toRefresh = new Set<Id>([targetFolderId, ...sourceFileFolders, ...sourceFolderParents]);
-    for (const fid of toRefresh) {
-      await this.refreshFolderFromServer(fid);
-    }
+      // 4) reconcile
+      const toRefresh = new Set<Id>([targetFolderId, ...sourceFileFolders, ...sourceFolderParents]);
+      for (const fid of toRefresh) {
+        await this.refreshFolderFromServer(fid);
+      }
 
-    this.clearSelection();
-  } catch (e: any) {
-    this.error.set(e?.message ?? 'Move failed');
-  } finally {
-    this.loading.set(false);
+      this.clearSelection();
+    } catch (e: any) {
+      this.error.set(e?.message ?? 'Move failed');
+    } finally {
+      this.loading.set(false);
+    }
   }
-}
 
   // move helpers
 
