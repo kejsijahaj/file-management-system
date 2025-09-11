@@ -96,6 +96,9 @@ export class DriveStore {
   }
 
   // ------- loaders --------
+
+  loadedFolderIds = signal<Set<string>>(new Set());
+
   async load(folderId: Id = this.currentFolderId()) {
     console.log(this.currentFolderId(), 'current');
     this.loading.set(true);
@@ -139,6 +142,10 @@ export class DriveStore {
         files.map((f) => f.id)
       );
       this.filesByFolder.set(filesIdx);
+
+      const s = new Set(this.loadedFolderIds());
+      s.add(String(folderId));
+      this.loadedFolderIds.set(s);
 
       this.breadcrumb.set(path);
     } catch (e: any) {
@@ -220,38 +227,42 @@ export class DriveStore {
 
   // ------ index helpers ------
   private _addChild(parentId: Id, folderId: Id) {
-    const idx = clone(this.childrenByParent());
-    const arr = idx.get(parentId) ?? [];
-    idx.set(parentId, [...arr, folderId]);
+    const key = String(parentId)
+    const idx = new Map(this.childrenByParent());
+    const arr = idx.get(key) ?? [];
+    idx.set(key, [...arr, folderId]);
     this.childrenByParent.set(idx);
   }
 
   private _removeChild(parentId: Id, folderId: Id) {
-    const idx = clone(this.childrenByParent());
-    const arr = (idx.get(parentId) ?? []).filter((id) => id !== folderId);
-    idx.set(parentId, arr);
+    const key = String(parentId);
+    const idx = new Map(this.childrenByParent());
+    const arr = (idx.get(key) ?? []).filter((id) => id !== folderId);
+    idx.set(key, arr);
     this.childrenByParent.set(idx);
   }
 
   private _addFileIndex(folderId: Id, fileId: Id) {
-    const idx = clone(this.filesByFolder());
-    const arr = idx.get(folderId) ?? [];
-    idx.set(folderId, [...arr, fileId]);
+    const key = String(folderId);
+    const idx = new Map(this.filesByFolder());
+    const arr = idx.get(key) ?? [];
+    idx.set(key, [...arr, fileId]);
     this.filesByFolder.set(idx);
   }
 
   private _removeFileIndex(folderId: Id, fileId: Id) {
-    const idx = clone(this.filesByFolder());
-    const arr = (idx.get(folderId) ?? []).filter((id) => id !== fileId);
-    idx.set(folderId, arr);
+    const key = String(folderId);
+    const idx = new Map(this.filesByFolder());
+    const arr = (idx.get(key) ?? []).filter((id) => id !== fileId);
+    idx.set(key, arr);
     this.filesByFolder.set(idx);
   }
 
   private _setFilesFor(folderId: Id, files: FileItem[]) {
-    const map = clone(this.filesById());
+    const map = new Map(this.filesById());
     for (const f of files) map.set(f.id, f);
     this.filesById.set(map);
-    const idx = clone(this.filesByFolder());
+    const idx = new Map(this.filesByFolder());
     idx.set(
       folderId,
       files.map((f) => f.id)
@@ -265,7 +276,7 @@ export class DriveStore {
     if (!entity) return; // cant delete empty folders
 
     // remove entity
-    const fMap = clone(this.foldersById());
+    const fMap = new Map(this.foldersById());
     fMap.delete(id);
     this.foldersById.set(fMap);
     // remove from index

@@ -35,7 +35,7 @@ export class Toolbar {
     this.store.clearSearch();
   }
 
-  go(id: number) {
+  go(id: string) {
     this.router.navigate(['/drive/folder', id]);
   }
 }
