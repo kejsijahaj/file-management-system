@@ -10,15 +10,15 @@
     <span>{{ store.selectedCount() }} selected</span>
 
     @if (!store.movePicking()) {
-    <button (click)="store.startMovePick()">Move</button>
+    <button (click)="store.startMovePick()" class="btn">Move</button>
     } @else {
     <strong class="hint">{{ store.moveHint() }}</strong>
     <button (click)="store.cancelMovePick()">Cancel</button>
     }
 
-    <button (click)="onDeleteSelected()">Delete</button>
-    <button (click)="store.selectAllVisible()">Select All</button>
-    <button (click)="store.clearSelection()">Clear</button>
+    <button (click)="onDeleteSelected()" class="btn">Delete</button>
+    <button (click)="store.selectAllVisible()" class="btn">Select All</button>
+    <button (click)="store.clearSelection()" class="btn">Clear</button>
   </div>
   }
 
@@ -32,14 +32,18 @@
     </div>
 
     @for (hit of store.searchResults(); track hit.kind + ':' + hit.id) {
-    <div class="row item" [class.search]="store.searchMode()" (click)="hit.kind === 'folder' ? go(hit.id) : openFile(hit.id)">
+    <div
+      class="row item"
+      [class.search]="store.searchMode()"
+      (click)="hit.kind === 'folder' ? go(hit.id) : openFile(hit.id)"
+    >
       <div class="col name">
         @if (hit.kind === 'folder') {
-          <mat-icon class="mr">folder</mat-icon>
-          {{hit.name}}
+        <mat-icon class="mr">folder</mat-icon>
+        {{ hit.name }}
         } @else if(hit.kind === 'file') {
-          <mat-icon class="file">insert_drive_file</mat-icon>
-          {{hit.name}}
+        <mat-icon class="file">insert_drive_file</mat-icon>
+        {{ hit.name }}
         }
       </div>
 
@@ -83,15 +87,6 @@
       cdkDrag
       [cdkDragData]="{ kind: 'folder', id: f.id, parentId: f.parentId }"
     >
-      <label class="check">
-        <input
-          type="checkbox"
-          [checked]="store.isFolderSelected(f.id)"
-          (click)="$event.stopPropagation()"
-          (change)="store.toggleFolder(f.id)"
-        />
-      </label>
-
       <div
         class="tile-body"
         [class.move-target]="store.movePicking()"
@@ -100,6 +95,14 @@
         <mat-icon class="mr">folder</mat-icon>
         <div class="name">{{ f.name }}</div>
       </div>
+      <label class="check">
+        <input
+          type="checkbox"
+          [checked]="store.isFolderSelected(f.id)"
+          (click)="$event.stopPropagation()"
+          (change)="store.toggleFolder(f.id)"
+        />
+      </label>
     </div>
     } @for (fl of store.currentFiles(); track fl.id) {
     <div
