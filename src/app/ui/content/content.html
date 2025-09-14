@@ -25,17 +25,22 @@
   <!----------- search mode --------->
   @if (store.searchMode()) {
   <div class="list">
-    <div class="row header">
+    <div class="row header" [class.search]="store.searchMode()">
       <div class="col name">Name</div>
       <div class="col type">Type</div>
       <div class="col updated">Last Updated</div>
     </div>
 
     @for (hit of store.searchResults(); track hit.kind + ':' + hit.id) {
-    <div class="row item" (click)="hit.kind === 'folder' ? go(hit.id) : openFile(hit.id)">
+    <div class="row item" [class.search]="store.searchMode()" (click)="hit.kind === 'folder' ? go(hit.id) : openFile(hit.id)">
       <div class="col name">
-        <mat-icon class="mr">{{ hit.kind === 'folder' ? 'folder' : 'insert_drive_file' }}</mat-icon>
-        {{ hit.name }}
+        @if (hit.kind === 'folder') {
+          <mat-icon class="mr">folder</mat-icon>
+          {{hit.name}}
+        } @else if(hit.kind === 'file') {
+          <mat-icon class="file">insert_drive_file</mat-icon>
+          {{hit.name}}
+        }
       </div>
 
       <div class="col type">
@@ -92,7 +97,7 @@
         [class.move-target]="store.movePicking()"
         (click)="store.movePicking() ? store.pickMoveTarget(f.id) : go(f.id)"
       >
-        <mat-icon>folder</mat-icon>
+        <mat-icon class="mr">folder</mat-icon>
         <div class="name">{{ f.name }}</div>
       </div>
     </div>
@@ -104,7 +109,7 @@
       cdkDrag
       [cdkDragData]="{ kind: 'file', id: fl.id, parentId: fl.folderId }"
     >
-      <mat-icon>insert_drive_file</mat-icon>
+      <mat-icon class="file">insert_drive_file</mat-icon>
       <div class="name">{{ fl.name }}</div>
     </div>
     } @if (store.currentFiles().length === 0 && store.currentFolders().length === 0) {
@@ -176,7 +181,7 @@
         />
       </div>
       <div class="col name" (click)="openFile(fl.id)">
-        <mat-icon class="mr">insert_drive_file</mat-icon> {{ fl.name }}
+        <mat-icon class="mr file">insert_drive_file</mat-icon> {{ fl.name }}
       </div>
       <div class="col type">{{ fl.mime | filePipe }}</div>
       <div class="col size">{{ fl.size | sizePipe }}</div>

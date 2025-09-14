@@ -27,7 +27,7 @@
       (click)="toggleFolder('0')"
     >
       <mat-icon class="chev">{{ isExpanded('0') ? 'expand_more' : 'chevron_right' }}</mat-icon>
-      <mat-icon>folder</mat-icon>
+      <mat-icon class="folder-icon">folder</mat-icon>
       <span (click)="openFolder('0'); $event.stopPropagation()">My Drive</span>
 
       @if (isLoading('0')) {
@@ -63,7 +63,7 @@
         [cdkDragData]="{kind: 'folder', id: node.id}"
       >
         <mat-icon class="chev">{{ isExpanded(node.id) ? 'expand_more' : 'chevron_right' }}</mat-icon>
-        <mat-icon>folder</mat-icon>
+        <mat-icon class="folder-icon">folder</mat-icon>
         <span (click)="openFolder(node.id); $event.stopPropagation()">{{ node.name }}</span>
 
         @if (isLoading(node.id)) {
@@ -81,7 +81,7 @@
     } @else {
       <button mat-button type="button" class="file-btn" (click)="openFolder(node.id)">
         <span class="chev-spacer"></span>
-        <mat-icon>insert_drive_file</mat-icon>
+        <mat-icon class="file-icon">insert_drive_file</mat-icon>
         <span class="file-name">{{ node.name }}</span>
       </button>
     }
