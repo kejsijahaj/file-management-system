@@ -28,7 +28,7 @@
     >
       <mat-icon class="chev">{{ isExpanded('0') ? 'expand_more' : 'chevron_right' }}</mat-icon>
       <mat-icon class="folder-icon">folder</mat-icon>
-      <span (click)="openFolder('0'); $event.stopPropagation()">My Drive</span>
+      <span (click)="openFolder('0'); $event.stopPropagation()">Home</span>
 
       @if (isLoading('0')) {
         <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
