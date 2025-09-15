@@ -7,9 +7,15 @@
   padding: 4px 4px 0;
 }
 
+.root-row {
+  display: block;
+  min-height: 28px;
+}
+
 .node-row {
   display: block;
   min-height: 28px;
+  margin-left: 30px;
 }
 
 .folder-btn,
