@@ -20,8 +20,6 @@ interface NodeItem {
   mime?: string;
 }
 
-type DragItem = { kind: 'file' | 'folder'; id: string; parentId?: string };
-
 @Component({
   selector: 'app-sidenav',
   standalone: true,
