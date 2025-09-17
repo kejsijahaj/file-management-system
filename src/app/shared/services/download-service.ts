@@ -4,44 +4,23 @@ import { saveAs } from 'file-saver';
 @Injectable({ providedIn: 'root' })
 export class DownloadService {
   async save(blob: Blob, filename: string): Promise<void> {
-    if ('showSaveFilePicker' in window) {
-      try {
-        const handle = await (window as any).showSaveFilePicker({
-          suggestedName: filename,
-          type: [
-            {
-              description: 'File',
-              accept: { [blob.type || 'application/octet-stream']: [this._extFromName(filename)] },
-            },
-          ],
-        });
-        const stream = await handle.createWritable();
-        await stream.write(blob);
-        await stream.close();
+    try {
+        saveAs(blob, filename);
         return;
-      } catch {
-        // user cancelled or API blocked => fall back to file-saver
-      }
-    }
-
-    try {
-      saveAs(blob, filename);
-      return;
     } catch {
-      // fall back to native download
-    }
-
-    const url = URL.createObjectURL(blob);
-    try {
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.rel = 'noopener';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    } finally {
-      URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(blob);
+        try{
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.rel = 'noopener';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } finally {
+            URL.revokeObjectURL(url);
+        }
     }
   }
 
