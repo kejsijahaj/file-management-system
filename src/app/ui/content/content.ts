@@ -1,4 +1,4 @@
-import { Component, effect, inject } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -8,6 +8,8 @@ import { firstValueFrom } from 'rxjs';
 import { FilePipe } from '../../shared/pipes/file-pipe';
 import { SizePipe } from '../../shared/pipes/size-pipe';
 import { DriveStore } from '../../features/drive/state/drive-store';
+import { ZipService } from '../../shared/services/zip-service';
+import { DownloadService } from '../../shared/services/download-service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -16,6 +18,7 @@ import { ConfirmService } from '../../shared/services/confirm-service';
 import { NameDialog } from '../../shared/components/name-dialog/name-dialog';
 import { MatDialog } from '@angular/material/dialog';
 import { FilePreviewDialog } from '../../shared/components/file-preview-dialog/file-preview-dialog';
+import { FileItem } from '../../shared/models/file-model';
 
 @Component({
   selector: 'app-content',
@@ -38,6 +41,8 @@ export class Content {
   private dialog = inject(MatDialog);
   store = inject(DriveStore);
   snackbar = inject(MatSnackBar);
+  zip = inject(ZipService);
+  download = inject(DownloadService);
 
   // listen to id changes
   folderId = toSignal(this.route.paramMap.pipe(map((p) => p.get('id') ?? '0')), {
@@ -80,6 +85,21 @@ export class Content {
 
   onDeleteSelected() {
     this.store.deleteSelected();
+  }
+
+  async onDownloadSelected() {
+    if (this.store.selectedCount() === 0) return;
+    
+    const files: FileItem[] = this.store.getSelectedFileItems();
+    const folderIds: string[] = this.store.getSelectedFolderIds();
+
+    const zipBlob = await this.zip.zipSelection(
+      {userId: this.store.userId(), files, folderIds},
+      {compressionLevel: 6, concurrency: 6}
+    );
+
+    const name = this.store.suggestBatchZipName();
+    await this.download.save(zipBlob, name);
   }
 
   async onEditFolder(folder: { id: string; name: string }) {

@@ -17,6 +17,7 @@
     }
 
     <button (click)="onDeleteSelected()" class="btn">Delete</button>
+    <button (click)="onDownloadSelected()" class="btn">Download</button>
     <button (click)="store.selectAllVisible()" class="btn">Select All</button>
     <button (click)="store.clearSelection()" class="btn">Clear</button>
   </div>
@@ -78,10 +79,7 @@
   @if (store.viewMode() === 'grid') {
   <div class="grid">
     @for (f of store.currentFolders(); track f.id) {
-    <div
-      class="tile folder"
-      [class.selected]="store.isFolderSelected(f.id)"
-    >
+    <div class="tile folder" [class.selected]="store.isFolderSelected(f.id)">
       <div
         class="tile-body"
         [class.move-target]="store.movePicking()"
@@ -100,11 +98,7 @@
       </label>
     </div>
     } @for (fl of store.currentFiles(); track fl.id) {
-    <div
-      class="tile file"
-      (click)="openFile(fl.id)"
-      [class.selected]="store.isFileSelected(fl.id)"
-    >
+    <div class="tile file" (click)="openFile(fl.id)" [class.selected]="store.isFileSelected(fl.id)">
       <mat-icon class="file">insert_drive_file</mat-icon>
       <div class="name">{{ fl.name }}</div>
     </div>
@@ -125,9 +119,7 @@
     </div>
 
     @for (f of store.currentFolders(); track f.id) {
-    <div
-      class="row item"
-    >
+    <div class="row item">
       <div class="col select">
         <input
           type="checkbox"
@@ -158,9 +150,7 @@
       </button>
     </div>
     } @for (fl of store.currentFiles(); track fl.id) {
-    <div
-      class="row item"
-    >
+    <div class="row item">
       <div class="col select">
         <input
           type="checkbox"

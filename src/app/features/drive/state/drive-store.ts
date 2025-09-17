@@ -3,6 +3,7 @@ import { ApiService } from '../../../core/api/api-service';
 import { Folder } from '../../../shared/models/folder-model';
 import { FileItem } from '../../../shared/models/file-model';
 import { ConfirmService } from '../../../shared/services/confirm-service';
+import { ZipService } from '../../../shared/services/zip-service';
 
 type Id = string;
 type SearchHit =
@@ -81,7 +82,7 @@ export class DriveStore {
 
   breadcrumb = signal<Folder[]>([]);
 
-  constructor(private api: ApiService, private confirm: ConfirmService) {
+  constructor(private api: ApiService, private confirm: ConfirmService, private zip: ZipService) {
     effect(() => {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('viewMode', this.viewMode());
@@ -227,7 +228,7 @@ export class DriveStore {
 
   // ------ index helpers ------
   private _addChild(parentId: Id, folderId: Id) {
-    const key = String(parentId)
+    const key = String(parentId);
     const idx = new Map(this.childrenByParent());
     const arr = idx.get(key) ?? [];
     idx.set(key, [...arr, folderId]);
@@ -584,10 +585,8 @@ export class DriveStore {
     this.error.set(null);
 
     try {
-      // 1) prime destination ONCE
       await this.ensureFolderPrimed(targetFolderId);
 
-      // remember sources
       const sourceFileFolders = new Set<string>();
       for (const id of this.selectedFileIds()) {
         const f = this.filesById().get(id);
@@ -599,16 +598,14 @@ export class DriveStore {
         if (folder) sourceFolderParents.add(folder.parentId);
       }
 
-      // 2) move files sequentially
       for (const id of this.selectedFileIds()) {
         await this.moveFile(id, targetFolderId);
       }
-      // 3) move folders sequentially
+
       for (const fid of this.selectedFolderIds()) {
         await this.moveFolder(fid, targetFolderId);
       }
 
-      // 4) reconcile
       const toRefresh = new Set<Id>([targetFolderId, ...sourceFileFolders, ...sourceFolderParents]);
       for (const fid of toRefresh) {
         await this.refreshFolderFromServer(fid);
@@ -653,7 +650,6 @@ export class DriveStore {
     }
   }
 
-  // Pre-move hydration when an index is missing
   private async ensureFolderPrimed(folderId: Id) {
     const hasFilesIdx = this.filesByFolder().has(folderId);
     const hasChildrenIdx = this.childrenByParent().has(folderId);
@@ -688,7 +684,6 @@ export class DriveStore {
     this.filesByFolder.set(filesIdx);
   }
 
-  // Post-move reconciliation to authoritative server state
   private async refreshFolderFromServer(folderId: Id) {
     const uid = this.userId();
     const [folders, files] = await Promise.all([
@@ -719,15 +714,71 @@ export class DriveStore {
     this.filesByFolder.set(filesIdx);
   }
 
-  private async _isInvalidTargetForSingleFolder(folderId: string, targetId: string) {
-    if (folderId === targetId) return true;
-    const path = await this.api.getFolderPath(targetId);
-    return path.some((p) => String(p.id) === String(folderId));
-  }
-
   async isInvalidFolderMoveSingle(folderId: string, targetFolderId: string): Promise<boolean> {
     if (String(folderId) === String(targetFolderId)) return true;
     const path = await this.api.getFolderPath(String(targetFolderId));
     return path.some((p) => String(p.id) === String(folderId));
+  }
+
+  // zip helper
+
+  private blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  }
+
+  async addBlobAsFile(name: string, blob: Blob, folderId: Id = this.currentFolderId()) {
+    const now = new Date().toISOString();
+    const dataUrl = await this.blobToDataUrl(blob);
+
+    const body = {
+      userId: this.userId(),
+      folderId: String(folderId),
+      name,
+      mime: blob.type,
+      size: blob.size,
+      url: dataUrl,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const created = this.nFile(await this.api.createFile(body));
+    const map = new Map(this.filesById());
+    map.set(created.id, created);
+    this.filesById.set(map);
+    this._addFileIndex(created.folderId, created.id);
+    return created;
+  }
+
+  getSelectedFileItems(): FileItem[] {
+    const map = this.filesById();
+    const out: FileItem[] = [];
+    for (const id of this.selectedFileIds()) {
+      const f = map.get(String(id));
+      if (f) out.push(f);
+    }
+    return out;
+  }
+
+  getSelectedFolderIds(): string[] {
+    return [...this.selectedFolderIds()].map(String);
+  }
+
+  suggestBatchZipName(): string {
+    const count = this.selectedCount();
+    if (count === 1) {
+      const files = this.getSelectedFileItems();
+      if (files.length === 1) return `${files[0].name.replace(/\.[^/.]+$/, '')}.zip`;
+      const folders = this.getSelectedFolderIds();
+      if (folders.length === 1) {
+        const f = this.foldersById().get(folders[0]);
+        if (f?.name) return `${f.name}.zip`;
+      }
+    }
+    return `Selection_${new Date().toISOString().slice(0, 10)}.zip`;
   }
 }
