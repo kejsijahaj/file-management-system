@@ -720,7 +720,7 @@ export class DriveStore {
     return path.some((p) => String(p.id) === String(folderId));
   }
 
-  // zip helper
+  // zip file helper
 
   private blobToDataUrl(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -739,7 +739,7 @@ export class DriveStore {
       userId: this.userId(),
       folderId: String(folderId),
       name,
-      mime: blob.type,
+      mime: blob.type || 'application/octet-stream',
       size: blob.size,
       url: dataUrl,
       createdAt: now,
@@ -780,5 +780,72 @@ export class DriveStore {
       }
     }
     return `Selection_${new Date().toISOString().slice(0, 10)}.zip`;
+  }
+
+  // extract file helper
+
+  async createFolderUnder(name: string, parentId: Id) {
+    const body = {
+      userId: this.userId(),
+      name,
+      parentId: String(parentId),
+      createdAt: new Date().toISOString(),
+    };
+    const created = this.nFolder(await this.api.createFolder(body));
+
+    const fMap = new Map(this.foldersById());
+    fMap.set(created.id, created);
+    this.foldersById.set(fMap);
+
+    const childIdx = new Map(this.childrenByParent());
+    const arr = childIdx.get(created.parentId) ?? []
+    childIdx.set(created.parentId, [...arr, created.id]);
+    this.childrenByParent.set(childIdx);
+
+    return created;
+  }
+
+  async ensureFolderPath(parentId: Id, segments: string[]): Promise<Id> {
+    let current = String(parentId);
+
+    for (const rawSeg of segments) {
+      const seg = (rawSeg || '').trim();
+      if (!seg) continue;
+
+      await this.ensureFolderPrimed(current);
+
+      // find child by name
+      const childIds = this.childrenByParent().get(current) ?? [];
+      const byId = this.foldersById();
+      let child = childIds.map(id => byId.get(id)!).find(f => f?.name === seg);
+
+      // create if missing
+      if (!child) {
+        child = await this.createFolderUnder(seg, current);
+      }
+      current = child.id;
+    }
+
+    return current;
+  }
+
+  // unique folder names
+  private _uniquifyName(folderId: Id, name: string): string {
+    const filesIdx = this.filesByFolder().get(String(folderId)) ?? [];
+    const byId = this.filesById();
+    const existing = new Set(filesIdx.map(id => byId.get(id)?.name).filter(Boolean) as string[]);
+
+    if(!existing.has(name)) return name;
+
+    const dot = name.lastIndexOf('.');
+    const base = dot > 0 ? name.slice(0, dot) : name;
+    const ext = dot > 0 ? name.slice(dot) : '';
+    let n = 1;
+    let candidate = `${base} (${n})${ext}`;
+    while (existing.has(candidate)) {
+      n++;
+      candidate = `${base} (${n})${ext}`;
+    }
+    return candidate;
   }
 }

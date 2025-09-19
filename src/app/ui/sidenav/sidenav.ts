@@ -10,6 +10,7 @@ import { MatMenuItem, MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 
 import { DriveStore } from '../../features/drive/state/drive-store';
+import { UnzipService } from '../../shared/services/unzip-service';
 import { NameDialog, NameDialogData } from '../../shared/components/name-dialog/name-dialog';
 
 type NodeType = 'folder' | 'file';
@@ -38,6 +39,7 @@ export class Sidenav {
   private router = inject(Router);
   private dialog = inject(MatDialog);
   private snackbar = inject(MatSnackBar);
+  private unzip = inject(UnzipService);
   store = inject(DriveStore);
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
@@ -155,14 +157,25 @@ export class Sidenav {
   async onFilesPicked(ev: Event) {
     const input = ev.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
-    if (!files.length) return;
-    try {
-      for (const file of files) {
+    for (const file of files) {
+      const isZip = file.type === 'application/zip' || file.name.toLowerCase().endsWith('.zip');
+      if (isZip) {
+        try {
+          await this.unzip.extractZipUpload(file, {
+            parentFolderId: this.store.currentFolderId(),
+            useCommonTopLevel: true,
+            onProgress: (pct) => {/*maybe add progress bar*/}
+          });
+        } catch (e) {
+          console.error('Unzip failed', e);
+          this.store.error.set((e as Error)?.message ?? 'Failed to extract ZIP');
+          // add snackbar
+        }
+      } else {
         await this.store.uploadFile(file);
       }
-    } finally {
-      input.value = '';
     }
+    input.value = '';
   }
 
   // trackBy
