@@ -30,6 +30,8 @@ export class Login {
   snackbar = inject(MatSnackBar);
   router = inject(Router)
 
+  loading = signal(false);
+
   readonly form = new FormGroup(
     {
       password: new FormControl('', [Validators.required]),
@@ -66,26 +68,38 @@ export class Login {
     }
   }
 
-  loginUser() {
-    const { email, password } = this.form.value;
-    this.auth.getUserByEmail(email as string).subscribe(
-      response => {
-        if(response.length > 0 && response[0].password === password) {
-          this.snackbar.open('Login successful', '', {
-            duration: 1000,
-          });
-          this.auth.setUser(response[0]);
-          this.router.navigate(['/home']);
-        } else if (response.length > 0 && response[0].password !== password) {
-          this.snackbar.open('Incorrect password', '', {
-            duration: 1000,
-          });
-        } else {
-          this.snackbar.open('Login failed', '', {
-            duration: 1000,
-          });
-        }
+  async loginUser() {
+    if (this.form.invalid || this.loading()) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const rawEmail = String(this.form.value.email ?? '').trim().toLowerCase();
+    const rawPassword = String(this.form.value.password ?? '');
+
+    this.loading.set(true);
+    try {
+      const users = await this.auth.getUserByEmail(rawEmail);
+      const user = users.find(u => String(u.email || '').trim().toLowerCase() === rawEmail);
+
+      if (!user) {
+        this.snackbar.open('Login failed', '', {duration: 1200});
+        return;
       }
-    )
+
+      if (user.password !== rawPassword) {
+        this.snackbar.open('Incorrect password', '', {duration: 1200});
+        return;
+      }
+
+      this.auth.setUser(user);
+      this.snackbar.open('Login successful', '', {duration: 1000});
+      await this.router.navigate(['/home']);
+    } catch (err) {
+      console.error(err);
+      this.snackbar.open('Network error. Try again.', '', {duration: 1400});
+    } finally {
+      this.loading.set(false);
+    }
   }
 }

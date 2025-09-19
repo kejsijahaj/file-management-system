@@ -1,6 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { computed, Injectable, signal } from "@angular/core";
 import { User } from "../../shared/models/user-model";
+import { firstValueFrom } from "rxjs";
 
 @Injectable({
   providedIn: "root",
@@ -20,14 +21,7 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  registerUser(userDetails: User) {
-    return this.http.post<User>(`${this.apiUrl}`, userDetails);
-  }
-
-  getUserByEmail(email: string) {
-    return this.http.get<User[]>(`${this.apiUrl}?email=${email}`);
-  }
-
+  // session helpers
   setUser(user: User | null) {
     this._user.set(user);
     if (user) {
@@ -52,6 +46,57 @@ export class AuthService {
   logout(): void {
     this.setUser(null);
   }
+
+  // async api
+
+  async registerUser(userDetails: User): Promise<User> {
+    return await firstValueFrom(this.http.post<User>(`${this.apiUrl}`, userDetails));
+  }
+
+  async getUserByEmail(email: string): Promise<User[]> {
+    return await firstValueFrom(this.http.get<User[]>(`${this.apiUrl}?email=${encodeURIComponent(email)}`));
+  }
+
+  async getUserByUsername(username: string): Promise<User[]> {
+    return await firstValueFrom(this.http.get<User[]>(`${this.apiUrl}?username=${encodeURIComponent(username)}`));
+  }
+
+  async isEmailTaken(email: string, excludeId?: string | number): Promise<boolean> {
+    const list = await this.getUserByEmail(email);
+    return list.some(u => String(u.id) !== String(excludeId));
+  }
+
+  async isUsernameTaken(username: string, excludeId?: string | number): Promise<boolean> {
+    const list = await this.getUserByUsername(username);
+    return list.some(u => String(u.id) !== String(excludeId));
+  }
+
+  async updateUser(user: User): Promise<User> {
+    const saved = await firstValueFrom(this.http.put<User>(`${this.apiUrl}/${user.id}`, user));
+    return saved;
+  }
+
+  async updateProfile(partial: Partial<User>): Promise<User> {
+    const cur = this._user();
+    if (!cur) throw new Error('No current user'); //add snackbar
+    const next: User = {...cur, ...partial, id: cur.id};
+    const saved = await this.updateUser(next);
+    this.setUser(saved);
+    return saved;
+  }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<User> {
+    const cur = this._user();
+    if (!cur) throw new Error('No current user'); //add snackbar
+    if (cur.password !== currentPassword) {
+      throw new Error('Current password is incorrect') // add snackbar
+    }
+    const saved = await this.updateUser({...cur, password: newPassword});
+    this.setUser(saved);
+    return saved;
+  }
+
+  // storage
 
   private readFromStorage(): User | null {
     try {

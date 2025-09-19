@@ -9,7 +9,6 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
-// import { passwordMatchValidator } from '../../shared/services/password-match';
 import { AuthService } from '../../core/auth/auth-service';
 import { User } from '../../shared/models/user-model';
 
@@ -31,20 +30,18 @@ export class Register {
   protected readonly value = signal('');
   errorMessage = signal('');
   hide = signal(true);
+  loading = signal(false);
+
   auth = inject(AuthService);
-  snackBar = inject(MatSnackBar);
+  snackbar = inject(MatSnackBar);
   router = inject(Router);
 
   readonly form = new FormGroup(
     {
-      username: new FormControl('', [Validators.required, Validators.pattern('^[a-zA-Z0-9]+$')]),
+      username: new FormControl('', [Validators.required, Validators.pattern('^[a-zA-Z0-9]+$'), Validators.minLength(3), Validators.maxLength(30)]),
       password: new FormControl('', [Validators.required]),
-      // confirmPassword: new FormControl('', [Validators.required]),
       email: new FormControl('', [Validators.required, Validators.email]),
     },
-    // {
-    //   validators: passwordMatchValidator()
-    // }
   );
 
   get username() {
@@ -58,10 +55,6 @@ export class Register {
   get password() {
     return this.form.get('password')!;
   }
-
-  // get confirmPassword() {
-  //   return this.form.get('confirmPassword')!;
-  // }
 
   constructor() {
     merge(this.email.statusChanges, this.email.valueChanges)
@@ -86,26 +79,46 @@ export class Register {
     event.stopPropagation();
   }
 
-  submit() {
-    if (this.form.valid) {
-      const postData = { ...this.form.value};
-      this.auth.registerUser(postData as User).subscribe(
-        response => {
-          console.log('User registered successfully', response);
-          this.snackBar.open('User registered successfully', '', {
-            duration: 1000,
-          });
-          this.router.navigate(['/login']);
-        },
-        error => {
-          console.error('Error registering user', error);
-          this.snackBar.open('Error registering user', '', {
-            duration: 1000,
-          });
-        }
-      )
-    } else {
+  async submit() {
+    if (this.form.invalid || this.loading()) {
       this.form.markAllAsTouched();
+      return;
+    }
+
+    const username = String(this.username.value ?? '').trim();
+    const email = String(this.email.value ?? '').trim().toLowerCase();
+    const password = String(this.password.value ?? '');
+
+    this.loading.set(true);
+    this.errorMessage.set('');
+
+    try {
+      if(await this.auth.isUsernameTaken(username)) {
+        this.snackbar.open('Username is already taken', '', {duration: 1200});
+        return;
+      }
+      if (await this.auth.isEmailTaken(email)) {
+        this.snackbar.open('Email is already taken', '', {duration: 1200});
+        return;
+      }
+
+      const user: User = {
+        id: crypto.randomUUID?.() ?? String(Date.now()),
+        username,
+        email,
+        password,
+      };
+
+      await this.auth.registerUser(user);
+
+      this.snackbar.open('User registered successfully', '', {duration: 1200});
+      await this.router.navigate(['/login']);
+    } catch (err: any) {
+      console.error(err);
+      this.errorMessage.set(err?.message ?? 'Error registering user');
+      this.snackbar.open('Error registering user', '', {duration: 1200});
+    } finally {
+      this.loading.set(false);
     }
   }
 }

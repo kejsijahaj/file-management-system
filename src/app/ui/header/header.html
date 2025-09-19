@@ -6,6 +6,7 @@
     </button>
 
     <mat-menu #userMenu="matMenu" class="user-menu">
+      <button mat-menu-item (click)="userDashboard()">Dashboard</button>
       <button mat-menu-item (click)="logOut()">Logout</button>
     </mat-menu>
   </div>

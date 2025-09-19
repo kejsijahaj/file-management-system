@@ -1,0 +1,83 @@
+<h2 mat-dialog-title>Account Settings</h2>
+
+<div class="dialog-body" mat-dialog-content>
+  <!-- success / error banners -->
+  @if (error()) {
+    <div class="alert error">{{ error() }}</div>
+  }
+  @if (success()) {
+    <div class="alert success">{{ success() }}</div>
+  }
+
+  <!-- Profile form -->
+  <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="form-section">
+    <h3>Profile</h3>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Username</mat-label>
+      <input matInput formControlName="username" />
+      @if (profileForm.get('username')?.hasError('required')) {
+        <mat-error>Required</mat-error>
+      }
+      @if (profileForm.get('username')?.hasError('pattern')) {
+        <mat-error>Letters & numbers only</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" />
+      @if (profileForm.get('email')?.hasError('required')) {
+        <mat-error>Required</mat-error>
+      }
+      @if (profileForm.get('email')?.hasError('email')) {
+        <mat-error>Not a valid email</mat-error>
+      }
+    </mat-form-field>
+
+    <button mat-raised-button color="primary" type="submit" [disabled]="loading()">Save Profile</button>
+  </form>
+
+  <hr />
+
+  <!-- Password form -->
+  <form [formGroup]="passwordForm" (ngSubmit)="savePassword()" class="form-section">
+    <h3>Change Password</h3>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Current Password</mat-label>
+      <input matInput [type]="showPw() ? 'text' : 'password'" formControlName="currentPassword" />
+      <button mat-icon-button matSuffix type="button" (click)="showPw.set(!showPw())">
+        <mat-icon>{{ showPw() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>New Password</mat-label>
+      <input matInput [type]="showNewPw() ? 'text' : 'password'" formControlName="newPassword" />
+      <button mat-icon-button matSuffix type="button" (click)="showNewPw.set(!showNewPw())">
+        <mat-icon>{{ showNewPw() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      @if (passwordForm.get('newPassword')?.hasError('weak')) {
+        <mat-hint>Use upper, lower, and a number.</mat-hint>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Confirm New Password</mat-label>
+      <input matInput [type]="showConfirmPw() ? 'text' : 'password'" formControlName="confirmPassword" />
+      <button mat-icon-button matSuffix type="button" (click)="showConfirmPw.set(!showConfirmPw())">
+        <mat-icon>{{ showConfirmPw() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      @if (passwordForm.hasError('mismatch')) {
+        <mat-error>Passwords do not match</mat-error>
+      }
+    </mat-form-field>
+
+    <button mat-raised-button color="primary" type="submit" [disabled]="loading()">Update Password</button>
+  </form>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Close</button>
+</div>
