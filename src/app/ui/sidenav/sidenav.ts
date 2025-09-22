@@ -169,7 +169,7 @@ export class Sidenav {
         } catch (e) {
           console.error('Unzip failed', e);
           this.store.error.set((e as Error)?.message ?? 'Failed to extract ZIP');
-          // add snackbar
+          this.snackbar.open(this.store.error()!, 'Close', { duration: 3000 });
         }
       } else {
         await this.store.uploadFile(file);

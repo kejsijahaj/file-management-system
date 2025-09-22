@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import JSZip from 'jszip';
 import { DriveStore } from '../../features/drive/state/drive-store';
-import { FileItem } from '../models/file-model';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 type Id = string;
 
@@ -16,18 +16,24 @@ export interface UnzipOptions {
 @Injectable({ providedIn: 'root' })
 export class UnzipService {
   private store = inject(DriveStore);
+  private snackbar = inject(MatSnackBar);
 
   async extractZipUpload(
     file: File,
     opts: UnzipOptions = {}
   ): Promise<{ rootFolderId: Id; filesCreated: number }> {
-    if (!file) throw new Error('No file provided'); // add snackbar
+    if (!file) {
+      this.snackbar.open('No file provided', 'Close', { duration: 3000 });
+      throw new Error('No file provided');
+    }
     if (!/\.zip$/i.test(file.name) && file.type !== 'application/zip') {
-      throw new Error('Not a ZIP file'); // add snackbar
+      this.snackbar.open('Not a ZIP file', 'Close', { duration: 3000 });
+      throw new Error('Not a ZIP file');
     }
 
     if (opts.sizeLimitBytes && file.size > opts.sizeLimitBytes) {
-      throw new Error(`ZIP too large (${file.size} bytes)`); // add snackbar
+      this.snackbar.open(`ZIP too large (${file.size} bytes)`, 'Close', { duration: 3000 });
+      throw new Error(`ZIP too large (${file.size} bytes)`);
     }
 
     const zip = await JSZip.loadAsync(file);

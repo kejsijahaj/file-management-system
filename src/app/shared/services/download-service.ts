@@ -1,8 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { saveAs } from 'file-saver';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Injectable({ providedIn: 'root' })
 export class DownloadService {
+  private snackbar = inject(MatSnackBar);
+
   async save(blob: Blob, filename: string): Promise<void> {
     try {
         saveAs(blob, filename);
@@ -27,8 +30,10 @@ export class DownloadService {
   //save url directly
   async saveFromUrl(url: string, filename: string): Promise<void> {
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
-    // add snackbar
+    if (!res.ok) {
+      this.snackbar.open(`Failed to fetch: ${res.status} ${res.statusText}`, 'Close', { duration: 3000 });
+      throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
+    }
     const blob = await res.blob();
     await this.save(blob, filename);
   }
@@ -63,8 +68,10 @@ export class DownloadService {
 
   private _dataUrlToBlob(dataUrl: string): Blob {
     const m = dataUrl.match(/^data:(.*?)(;base64)?,(.*)$/);
-    if (!m) throw new Error('Invalid data URL');
-    // snackbar
+    if (!m) {
+      this.snackbar.open('Invalid data URL', 'Close', { duration: 3000 });
+      throw new Error('Invalid data URL');
+    }
     const mime = m[1] || 'application/octet-stream';
     const isBase64 = !!m[2];
 

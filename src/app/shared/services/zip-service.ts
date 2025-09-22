@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import JSZip from 'jszip';
 import { Subject } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { Folder } from '../models/folder-model';
 import { FileItem } from '../models/file-model';
@@ -37,6 +38,7 @@ export interface ZipByIdsSelection {
 @Injectable({ providedIn: 'root' })
 export class ZipService {
   private api = inject(ApiService);
+  private snackbar = inject(MatSnackBar);
 
   // convenience wrapper
   async zipByIds(
@@ -92,8 +94,8 @@ export class ZipService {
     );
 
     if (opts.cancel$ && this.isCancelled(opts.cancel$)) {
+      this.snackbar.open('Zip cancelled', 'Close', { duration: 3000 });
       throw new Error('Zip cancelled');
-      // snackbar maybe
     }
 
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }, (m) => {
@@ -202,8 +204,10 @@ export class ZipService {
   // load bytes (data url and http)
 
   private async loadFile(file: FileItem): Promise<ArrayBuffer> {
-    if (!file.url) throw new Error(`No Url for "${file.name}"`);
-    // snackbar
+    if (!file.url) {
+      this.snackbar.open(`No URL for "${file.name}"`, 'Close', { duration: 3000 });
+      throw new Error(`No Url for "${file.name}"`);
+    }
     if (file.url.startsWith('data:')) {
       return this.dataUrlToArrayBuffer(file.url);
     }
@@ -214,7 +218,10 @@ export class ZipService {
 
   private async dataUrlToArrayBuffer(dataUrl: string): Promise<ArrayBuffer> {
     const m = dataUrl.match(/^data:(.*?)(;base64)?,(.*)$/);
-    if (!m) throw new Error('Invalid data URL.'); //snackbar
+    if (!m) {
+      this.snackbar.open('Invalid data URL.', 'Close', { duration: 3000 });
+      throw new Error('Invalid data URL.');
+    }
     const isBase64 = !!m[2];
     const data = decodeURIComponent(m[3]);
     if (isBase64) {

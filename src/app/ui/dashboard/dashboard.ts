@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIcon, MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth-service';
 import { single } from 'rxjs';
 
@@ -18,6 +19,7 @@ export class Dashboard {
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<Dashboard>);
   private auth = inject(AuthService);
+  private snackbar = inject(MatSnackBar);
 
   loading = signal(false);
   error = signal<string | null>(null);
@@ -65,19 +67,19 @@ export class Dashboard {
 
     try {
       if (username !== me.username && await this.auth.isUsernameTaken(username,me.id)) {
+        this.snackbar.open('Username is already taken', 'Close', { duration: 3000 });
         throw new Error('Username is already taken');
-        // add snackbar
       }
       if (email !== me.email && await this.auth.isEmailTaken(email, me.id)) {
+        this.snackbar.open('Email is already taken', 'Close', { duration: 3000 });
         throw new Error('Email is already taken');
-        // add snackbar
       }
 
       await this.auth.updateProfile({username, email});
-      this.success.set('Profile updated!'); //add snackbar
+      this.snackbar.open('Profile updated', '', { duration: 1000 });
     } catch (e: any) {
-      this.error.set(e?.mesage ?? 'Failed to update profile');
-      // add snackbar
+      this.error.set(e?.message ?? 'Failed to update profile');
+      this.snackbar.open(this.error()!, 'Close', { duration: 3000 });
     } finally {
       this.loading.set(false);
     }
@@ -96,9 +98,11 @@ export class Dashboard {
     try {
       await this.auth.changePassword(currentPassword, newPassword);
       this.passwordForm.reset();
-      this.success.set('Password updated'); // add snackbar
+      this.success.set('Password updated');
+      this.snackbar.open('Password updated', '', { duration: 1000 });
     } catch (e: any) {
-      this.error.set(e?.message ?? 'Failed to change password'); // add snackbar
+      this.error.set(e?.message ?? 'Failed to change password');
+      this.snackbar.open(this.error()!, 'Close', { duration: 3000 });
     } finally {
       this.loading.set(false);
     }

@@ -2,6 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { computed, Injectable, signal } from "@angular/core";
 import { User } from "../../shared/models/user-model";
 import { firstValueFrom } from "rxjs";
+import { MatSnackBar } from "@angular/material/snack-bar";
 
 @Injectable({
   providedIn: "root",
@@ -19,7 +20,7 @@ export class AuthService {
     return u?.username as string;
   });
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private snackbar: MatSnackBar) {}
 
   // session helpers
   setUser(user: User | null) {
@@ -78,7 +79,10 @@ export class AuthService {
 
   async updateProfile(partial: Partial<User>): Promise<User> {
     const cur = this._user();
-    if (!cur) throw new Error('No current user'); //add snackbar
+    if (!cur) {
+      this.snackbar.open('No current user', 'Close', { duration: 3000 });
+      throw new Error('No current user');
+    }
     const next: User = {...cur, ...partial, id: cur.id};
     const saved = await this.updateUser(next);
     this.setUser(saved);
@@ -87,9 +91,13 @@ export class AuthService {
 
   async changePassword(currentPassword: string, newPassword: string): Promise<User> {
     const cur = this._user();
-    if (!cur) throw new Error('No current user'); //add snackbar
+      if (!cur) {
+        this.snackbar.open('No current user', 'Close', { duration: 3000 });
+        throw new Error('No current user');
+      }
     if (cur.password !== currentPassword) {
-      throw new Error('Current password is incorrect') // add snackbar
+      this.snackbar.open('Current password is incorrect', 'Close', { duration: 3000 });
+      throw new Error('Current password is incorrect');
     }
     const saved = await this.updateUser({...cur, password: newPassword});
     this.setUser(saved);
