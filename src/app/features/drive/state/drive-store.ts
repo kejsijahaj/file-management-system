@@ -4,6 +4,9 @@ import { Folder } from '../../../shared/models/folder-model';
 import { FileItem } from '../../../shared/models/file-model';
 import { ConfirmService } from '../../../shared/services/confirm-service';
 import { ZipService } from '../../../shared/services/zip-service';
+import { PermissionService } from '../permission-service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuthService } from '../../../core/auth/auth-service';
 
 type Id = string;
 type SearchHit =
@@ -25,7 +28,7 @@ const clone = <K, V>(m: Map<K, V>) => new Map<K, V>(m);
 @Injectable({ providedIn: 'root' })
 export class DriveStore {
   //session
-  userId = signal<string>('1'); // set after login
+  userId = signal<string>(''); // set after login
   currentFolderId = signal<Id>('0'); // root
 
   //UI
@@ -82,12 +85,24 @@ export class DriveStore {
 
   breadcrumb = signal<Folder[]>([]);
 
-  constructor(private api: ApiService, private confirm: ConfirmService, private zip: ZipService) {
+  constructor(
+    private api: ApiService,
+    private confirm: ConfirmService,
+    private zip: ZipService,
+    private perm: PermissionService,
+    private snackbar: MatSnackBar,
+    private auth: AuthService
+  ) {
     effect(() => {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('viewMode', this.viewMode());
       }
     });
+
+    effect(() => {
+      const u = this.auth.getCurrentUser();
+      this.userId.set(u ? String(u.id) : '')
+    })
 
     effect(() => {
       this.currentFolderId();
@@ -300,6 +315,13 @@ export class DriveStore {
   }
 
   async renameFolder(id: Id, name: string) {
+    const f = this.foldersById().get(id);
+    if (!this.perm.canEditFolder(f)) {
+      this.snackbar.open('You do not have permission to rename this folder.', 'Close', {
+        duration: 3000,
+      });
+      throw new Error('No permission to rename folder');
+    }
     const updated = await this.api.renameFolder(id, name);
     const fMap = clone(this.foldersById());
     fMap.set(id, updated);
@@ -311,6 +333,12 @@ export class DriveStore {
 
   async moveFolder(id: Id, targetParentId: Id) {
     const old = this.foldersById().get(id);
+    if (!this.perm.canEditFolder(old)) {
+      this.snackbar.open('You do not have permission to move this folder.', 'Close', {
+        duration: 3000,
+      });
+      throw new Error('No permission to move folder');
+    }
     const oldParent = old?.parentId ?? this.currentFolderId();
     const updated = this.nFolder(await this.api.moveFolder(id, targetParentId));
     const fMap = new Map(this.foldersById());
@@ -321,6 +349,13 @@ export class DriveStore {
   }
 
   async deleteFolderFlow(id: Id) {
+    const f = this.foldersById().get(id);
+    if (!this.perm.canEditFolder(f)) {
+      this.snackbar.open('You do not have permission to delete this folder.', 'Close', {
+        duration: 3000,
+      });
+      throw new Error('No permission to delete folder');
+    }
     this.loading.set(true);
     this.error.set(null);
     try {
@@ -359,6 +394,13 @@ export class DriveStore {
 
   async cascadeDeleteFolder(rootId: Id) {
     const uid = this.userId();
+    const root = this.foldersById().get(rootId);
+    if (!this.perm.canEditFolder(root)) {
+      this.snackbar.open('You do not have permission to delete this folder.', 'Close', {
+        duration: 3000,
+      });
+      throw new Error('No permission to delete folder');
+    }
 
     // build sub trees
     const depths = new Map<Id, number>();
@@ -484,6 +526,13 @@ export class DriveStore {
   }
 
   async renameFile(id: Id, newName: string) {
+    const file = this.filesById().get(id);
+    if (!this.perm.canEditFile(file)) {
+      this.snackbar.open('You do not have permission to rename this file.', 'Close', {
+        duration: 3000,
+      });
+      throw new Error('No permission to rename file');
+    }
     const updated = await this.api.patchFile(id, {
       name: newName,
       updatedAt: new Date().toISOString(),
@@ -495,6 +544,12 @@ export class DriveStore {
 
   async moveFile(id: Id, targetFolderId: Id) {
     const old = this.filesById().get(id);
+    if (!this.perm.canEditFile(old)) {
+      this.snackbar.open('You do not have permission to move this file.', 'Close', {
+        duration: 3000,
+      });
+      throw new Error('No permission to move file');
+    }
     const oldFolder = old?.folderId ?? this.currentFolderId();
     const updated = this.nFile(await this.api.moveFile(id, targetFolderId));
     const map = new Map(this.filesById());
@@ -505,6 +560,14 @@ export class DriveStore {
   }
 
   async deleteFile(id: Id) {
+    const file = this.filesById().get(id);
+    if (!this.perm.canEditFile(file)) {
+      this.snackbar.open('You do not have permission to delete this file.', 'Close', {
+        duration: 3000,
+      });
+      throw new Error('No permission to delete file');
+    }
+
     await this.api.deleteFile(id);
     const entity = this.filesById().get(id);
     if (!entity) return;
@@ -567,10 +630,19 @@ export class DriveStore {
     this.loading.set(true);
     this.error.set(null);
     try {
-      await Promise.all([...this.selectedFileIds()].map((id) => this.deleteFile(id)));
-      for (const fid of this.selectedFolderIds()) {
-        await this.deleteFolderFlow(fid);
-      }
+      const allowedFileIds = [...this.selectedFileIds()].filter((id) =>
+        this.perm.canEditFile(this.filesById().get(id))
+      );
+      const allowedFolderIds = [...this.selectedFolderIds()].filter((id) =>
+        this.perm.canEditFolder(this.foldersById().get(id))
+      );
+
+      const skipped = this.selectedCount() - (allowedFileIds.length + allowedFolderIds.length);
+      if (skipped > 0) this.error.set(`Some items were skipped due to permissions.`);
+
+      await Promise.all(allowedFileIds.map((id) => this.deleteFile(id)));
+      for (const fid of allowedFolderIds) await this.deleteFolderFlow(fid);
+
       this.clearSelection();
     } catch (e: any) {
       this.error.set(e?.message ?? 'Delete failed');
@@ -798,7 +870,7 @@ export class DriveStore {
     this.foldersById.set(fMap);
 
     const childIdx = new Map(this.childrenByParent());
-    const arr = childIdx.get(created.parentId) ?? []
+    const arr = childIdx.get(created.parentId) ?? [];
     childIdx.set(created.parentId, [...arr, created.id]);
     this.childrenByParent.set(childIdx);
 
@@ -817,7 +889,7 @@ export class DriveStore {
       // find child by name
       const childIds = this.childrenByParent().get(current) ?? [];
       const byId = this.foldersById();
-      let child = childIds.map(id => byId.get(id)!).find(f => f?.name === seg);
+      let child = childIds.map((id) => byId.get(id)!).find((f) => f?.name === seg);
 
       // create if missing
       if (!child) {
@@ -833,9 +905,9 @@ export class DriveStore {
   private _uniquifyName(folderId: Id, name: string): string {
     const filesIdx = this.filesByFolder().get(String(folderId)) ?? [];
     const byId = this.filesById();
-    const existing = new Set(filesIdx.map(id => byId.get(id)?.name).filter(Boolean) as string[]);
+    const existing = new Set(filesIdx.map((id) => byId.get(id)?.name).filter(Boolean) as string[]);
 
-    if(!existing.has(name)) return name;
+    if (!existing.has(name)) return name;
 
     const dot = name.lastIndexOf('.');
     const base = dot > 0 ? name.slice(0, dot) : name;

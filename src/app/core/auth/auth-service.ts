@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { computed, Injectable, signal } from "@angular/core";
-import { User } from "../../shared/models/user-model";
+import { User, NewUser } from "../../shared/models/user-model";
 import { firstValueFrom } from "rxjs";
 import { MatSnackBar } from "@angular/material/snack-bar";
 
@@ -50,7 +50,7 @@ export class AuthService {
 
   // async api
 
-  async registerUser(userDetails: User): Promise<User> {
+  async registerUser(userDetails: NewUser): Promise<User> {
     return await firstValueFrom(this.http.post<User>(`${this.apiUrl}`, userDetails));
   }
 
@@ -109,7 +109,10 @@ export class AuthService {
   private readFromStorage(): User | null {
     try {
       const raw = localStorage.getItem(this.STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as User) : null;
+      if(!raw) return null;
+      const u = JSON.parse(raw) as Partial<User>;
+      if (u && !('role' in u)) (u as any).role = 'user';
+      return u as User;
     } catch {
       return null;
     }

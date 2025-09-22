@@ -19,6 +19,7 @@ import { NameDialog } from '../../shared/components/name-dialog/name-dialog';
 import { MatDialog } from '@angular/material/dialog';
 import { FilePreviewDialog } from '../../shared/components/file-preview-dialog/file-preview-dialog';
 import { FileItem } from '../../shared/models/file-model';
+import { PermissionService } from '../../features/drive/permission-service';
 
 @Component({
   selector: 'app-content',
@@ -43,6 +44,7 @@ export class Content {
   snackbar = inject(MatSnackBar);
   zip = inject(ZipService);
   download = inject(DownloadService);
+  perm = inject(PermissionService);
 
   dragging = signal<{ id: string; type: 'file' | 'folder' } | null>(null);
   dragOver = signal<string | null>(null);
@@ -155,13 +157,20 @@ export class Content {
 
   // drag and drop handlers
 
-  private async validDrop(targetId: string, item: { id: string; type: 'file' | 'folder' }): Promise<boolean> {
+  private async validDrop(
+    targetId: string,
+    item: { id: string; type: 'file' | 'folder' }
+  ): Promise<boolean> {
     if (item.type === 'file') {
+      const file = this.store.filesById().get(item.id);
+      if (!this.store['perm'].canEditFile(file)) return false;
       return true;
+    } else {
+      const folder = this.store.foldersById().get(item.id);
+      if (!this.store['perm'].canEditFolder(folder)) return false;
+      const invalid = await this.store.isInvalidFolderMoveSingle(item.id, targetId);
+      return !invalid;
     }
-
-    const invalid = await this.store.isInvalidFolderMoveSingle(item.id, targetId);
-    return !invalid;
   }
 
   onDragStart(event: DragEvent, id: string, type: 'file' | 'folder') {
@@ -207,19 +216,19 @@ export class Content {
     const item = this.readItem(event);
     if (!item) return;
 
-    if(!(await this.validDrop(targetId, item))) {
+    if (!(await this.validDrop(targetId, item))) {
       this.snackbar.open('Cannot drop there', '', { duration: 800 });
       this.dragOver.set(null);
       return;
     }
 
     try {
-      if(item.type === 'file'){
+      if (item.type === 'file') {
         await this.store.moveFile(item.id, targetId);
       } else {
         await this.store.moveFolder(item.id, targetId);
       }
-      await this.store['refreshFolderFromServer']?.( targetId );
+      await this.store['refreshFolderFromServer']?.(targetId);
     } catch (e) {
       console.error('Error during move:', e);
       this.snackbar.open('Failed to move item', '', { duration: 1000 });
@@ -236,7 +245,11 @@ export class Content {
       const raw = dt.getData('application/json') || dt.getData('text/plain');
       if (!raw) return null;
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed.id === 'string' && (parsed.type === 'file' || parsed.type === 'folder')) {
+      if (
+        parsed &&
+        typeof parsed.id === 'string' &&
+        (parsed.type === 'file' || parsed.type === 'folder')
+      ) {
         return parsed;
       }
       return null;

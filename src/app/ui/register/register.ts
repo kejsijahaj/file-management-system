@@ -10,7 +10,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth-service';
-import { User } from '../../shared/models/user-model';
+import { User, NewUser } from '../../shared/models/user-model';
 
 @Component({
   selector: 'app-register',
@@ -102,15 +102,8 @@ export class Register {
         return;
       }
 
-      const user: User = {
-        id: crypto.randomUUID?.() ?? String(Date.now()),
-        username,
-        email,
-        password,
-      };
-
-      await this.auth.registerUser(user);
-
+      const payload = {username, email, password, role: 'user'} as const;
+      await this.auth.registerUser(payload);
       this.snackbar.open('User registered successfully', '', {duration: 1200});
       await this.router.navigate(['/login']);
     } catch (err: any) {

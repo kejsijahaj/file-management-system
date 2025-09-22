@@ -172,11 +172,12 @@
       <button
         class="delete-button"
         mat-icon-button
+        [disabled]="!perm.canEditFolder(f)"
         (click)="onDeleteFolder(f.id); $event.stopPropagation()"
       >
         <mat-icon>delete</mat-icon>
       </button>
-      <button class="edit-button" mat-icon-button (click)="onEditFolder(f)">
+      <button class="edit-button" mat-icon-button (click)="onEditFolder(f)" [disabled]="!perm.canEditFolder(f)">
         <mat-icon>edit</mat-icon>
       </button>
     </div>
@@ -205,11 +206,12 @@
       <button
         class="delete-button"
         mat-icon-button
+        [disabled]="!perm.canEditFile(fl)"
         (click)="onDeleteFile(fl.id, fl.name); $event.stopPropagation()"
       >
         <mat-icon>delete</mat-icon>
       </button>
-      <button class="edit-button" mat-icon-button (click)="onEditFile(fl)">
+      <button class="edit-button" mat-icon-button (click)="onEditFile(fl)" [disabled]="!perm.canEditFile(fl)">
         <mat-icon>edit</mat-icon>
       </button>
     </div>

@@ -40,30 +40,6 @@
           <mat-icon>{{ hide() ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
       </mat-form-field>
-      <!-- <mat-form-field>
-        <mat-label>Confirm password</mat-label>
-        <input
-          matInput
-          required
-          passwordMatchValidator
-          formControlName="confirmPassword"
-          (blur)="updateErrorMessage()"
-          [type]="hide() ? 'password' : 'text'"
-        />
-        @if (form.hasError('passwordMismatch') && confirmPassword.touched) {
-        <mat-error> Passwords should match! </mat-error>
-        }
-        <button
-          matIconButton
-          matSuffix
-          class="view-password"
-          (click)="clickEvent($event)"
-          [attr.aria-label]="'Hide password'"
-          [attr.aria-pressed]="hide()"
-        >
-          <mat-icon>{{ hide() ? 'visibility_off' : 'visibility' }}</mat-icon>
-        </button>
-      </mat-form-field> -->
 
       <button
         matButton="elevated"
