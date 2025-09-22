@@ -5,14 +5,25 @@
   gap: 1rem;
 }
 
+.mat-dialog-title {
+  padding: 1rem;
+  padding-bottom: 0;
+}
+
 .form-section {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 1rem;
 }
 
+.form-title {
+  align-self: flex-start;
+  padding-left: 6rem;
+}
+
 .full-width {
-  width: 100%;
+  width: 80%;
 }
 
 .alert {
