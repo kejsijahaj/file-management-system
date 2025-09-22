@@ -79,11 +79,23 @@
   @if (store.viewMode() === 'grid') {
   <div class="grid">
     @for (f of store.currentFolders(); track f.id) {
-    <div class="tile folder" [class.selected]="store.isFolderSelected(f.id)">
+    <div
+      class="tile folder"
+      [class.selected]="store.isFolderSelected(f.id)"
+      draggable="true"
+      [class.drag-over]="dragOver() === f.id"
+      (dragstart)="onDragStart($event, f.id, 'folder')"
+      (dragend)="onDragEnd($event)"
+      (dragenter)="onDragEnter($event, f.id)"
+      (dragleave)="onDragLeave($event, f.id)"
+      (dragover)="onDragOver($event, f.id)"
+      (drop)="onDrop($event, f.id)"
+    >
       <div
         class="tile-body"
         [class.move-target]="store.movePicking()"
         (click)="store.movePicking() ? store.pickMoveTarget(f.id) : go(f.id)"
+        [class.dragging]="dragging()?.id === f.id && dragging()?.type === 'folder'"
       >
         <mat-icon class="mr">folder</mat-icon>
         <div class="name">{{ f.name }}</div>
@@ -98,7 +110,15 @@
       </label>
     </div>
     } @for (fl of store.currentFiles(); track fl.id) {
-    <div class="tile file" (click)="openFile(fl.id)" [class.selected]="store.isFileSelected(fl.id)">
+    <div
+      class="tile file"
+      (click)="openFile(fl.id)"
+      [class.selected]="store.isFileSelected(fl.id)"
+      draggable="true"
+      (dragstart)="onDragStart($event, fl.id, 'file')"
+      (dragend)="onDragEnd($event)"
+      [class.dragging]="dragging()?.id === fl.id && dragging()?.type === 'file'"
+    >
       <mat-icon class="file">insert_drive_file</mat-icon>
       <div class="name">{{ fl.name }}</div>
     </div>
@@ -119,7 +139,17 @@
     </div>
 
     @for (f of store.currentFolders(); track f.id) {
-    <div class="row item">
+    <div
+      class="row item"
+      draggable="true"
+      [class.drag-over]="dragOver() === f.id"
+      (dragstart)="onDragStart($event, f.id, 'folder')"
+      (dragend)="onDragEnd($event)"
+      (dragenter)="onDragEnter($event, f.id)"
+      (dragleave)="onDragLeave($event, f.id)"
+      (dragover)="onDragOver($event, f.id)"
+      (drop)="onDrop($event, f.id)"
+    >
       <div class="col select">
         <input
           type="checkbox"
@@ -132,6 +162,7 @@
         class="col name"
         [class.move-target]="store.movePicking()"
         (click)="store.movePicking() ? store.pickMoveTarget(f.id) : go(f.id)"
+        [class.dragging]="dragging()?.id === f.id && dragging()?.type === 'folder'"
       >
         <mat-icon class="mr">folder</mat-icon> {{ f.name }}
       </div>
@@ -150,7 +181,13 @@
       </button>
     </div>
     } @for (fl of store.currentFiles(); track fl.id) {
-    <div class="row item">
+    <div
+      class="row item"
+      draggable="true"
+      (dragstart)="onDragStart($event, fl.id, 'file')"
+      (dragend)="onDragEnd($event)"
+      [class.dragging]="dragging()?.id === fl.id && dragging()?.type === 'file'"
+    >
       <div class="col select">
         <input
           type="checkbox"

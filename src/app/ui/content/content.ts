@@ -44,6 +44,9 @@ export class Content {
   zip = inject(ZipService);
   download = inject(DownloadService);
 
+  dragging = signal<{ id: string; type: 'file' | 'folder' } | null>(null);
+  dragOver = signal<string | null>(null);
+
   // listen to id changes
   folderId = toSignal(this.route.paramMap.pipe(map((p) => p.get('id') ?? '0')), {
     initialValue: '0',
@@ -89,13 +92,13 @@ export class Content {
 
   async onDownloadSelected() {
     if (this.store.selectedCount() === 0) return;
-    
+
     const files: FileItem[] = this.store.getSelectedFileItems();
     const folderIds: string[] = this.store.getSelectedFolderIds();
 
     const zipBlob = await this.zip.zipSelection(
-      {userId: this.store.userId(), files, folderIds},
-      {compressionLevel: 6, concurrency: 6}
+      { userId: this.store.userId(), files, folderIds },
+      { compressionLevel: 6, concurrency: 6 }
     );
 
     const name = this.store.suggestBatchZipName();
@@ -148,5 +151,97 @@ export class Content {
       maxWidth: '80vw',
       height: '80vh',
     });
+  }
+
+  // drag and drop handlers
+
+  private async validDrop(targetId: string, item: { id: string; type: 'file' | 'folder' }): Promise<boolean> {
+    if (item.type === 'file') {
+      return true;
+    }
+
+    const invalid = await this.store.isInvalidFolderMoveSingle(item.id, targetId);
+    return !invalid;
+  }
+
+  onDragStart(event: DragEvent, id: string, type: 'file' | 'folder') {
+    if (!event.dataTransfer) return;
+    event.dataTransfer.setData('application/json', JSON.stringify({ id, type }));
+    event.dataTransfer.effectAllowed = 'move';
+    this.dragging.set({ id, type });
+  }
+
+  onDragEnd(_event: DragEvent) {
+    this.dragging.set(null);
+    this.dragOver.set(null);
+  }
+
+  async onDragEnter(event: DragEvent, id: string) {
+    event.preventDefault();
+    try {
+      const item = this.readItem(event);
+      if (item && (await this.validDrop(id, item))) {
+        this.dragOver.set(id);
+      }
+    } catch {
+      // ignore malformed data
+    }
+  }
+
+  async onDragOver(event: DragEvent, id: string) {
+    event.preventDefault();
+    const item = this.readItem(event);
+    if (!item) return;
+
+    const ok = await this.validDrop(id, item);
+    event.dataTransfer && (event.dataTransfer.dropEffect = ok ? 'move' : 'none');
+    this.dragOver.set(ok ? id : null);
+  }
+
+  onDragLeave(_event: DragEvent, id: string) {
+    if (this.dragOver() === id) this.dragOver.set(null);
+  }
+
+  async onDrop(event: DragEvent, targetId: string) {
+    event.preventDefault();
+    const item = this.readItem(event);
+    if (!item) return;
+
+    if(!(await this.validDrop(targetId, item))) {
+      this.snackbar.open('Cannot drop there', '', { duration: 800 });
+      this.dragOver.set(null);
+      return;
+    }
+
+    try {
+      if(item.type === 'file'){
+        await this.store.moveFile(item.id, targetId);
+      } else {
+        await this.store.moveFolder(item.id, targetId);
+      }
+      await this.store['refreshFolderFromServer']?.( targetId );
+    } catch (e) {
+      console.error('Error during move:', e);
+      this.snackbar.open('Failed to move item', '', { duration: 1000 });
+    } finally {
+      this.dragOver.set(null);
+      this.dragging.set(null);
+    }
+  }
+
+  private readItem(event: DragEvent): { id: string; type: 'file' | 'folder' } | null {
+    try {
+      const dt = event.dataTransfer;
+      if (!dt) return null;
+      const raw = dt.getData('application/json') || dt.getData('text/plain');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.id === 'string' && (parsed.type === 'file' || parsed.type === 'folder')) {
+        return parsed;
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 }

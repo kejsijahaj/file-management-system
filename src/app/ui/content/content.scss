@@ -43,6 +43,21 @@
   cursor: pointer;
 }
 
+.tile.dragging {
+  opacity: 0.5;
+}
+
+.tile.folder.drag-over,
+.tile.folder .tile-body.drag-over {
+  outline: 2px dashed var(--accent, #3f51b5);
+  outline-offset: 2px;
+  background: rgba(63, 81, 181, 0.06);
+}
+
+.tile.folder {
+  transition: background 120ms ease, outline-color 120ms ease;
+}
+
 .list {
   display: flex;
   flex-direction: column;
