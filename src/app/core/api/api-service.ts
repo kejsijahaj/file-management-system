@@ -70,18 +70,16 @@ export class ApiService {
 
   // --------- folders -----------
   listFoldersByUser(userId: string): Promise<Folder[]> {
-    const params = paramsForm({ userId, _sort: 'name', _order: 'asc' });
+    const params = paramsForm({ _sort: 'name', _order: 'asc' });
     return this.get<Folder[]>(`/folders`, params);
   }
 
   listChildrenFolders(
-    userId: string,
     parentId: string,
     sort: keyof Folder = 'name',
     order: Order = 'asc'
   ): Promise<Folder[]> {
     const params = paramsForm({
-      userId,
       parentId,
       _sort: sort,
       _order: order,
@@ -124,7 +122,6 @@ export class ApiService {
 
   // ------- files ----------
   listFilesInFolder(
-    userId: string,
     folderId: string,
     opts?: {
       q?: string;
@@ -135,7 +132,6 @@ export class ApiService {
     }
   ): Promise<FileItem[]> {
     const params = paramsForm({
-      userId,
       folderId,
       name_like: opts?.q,
       _sort: opts?.sort ?? 'name',
@@ -171,13 +167,13 @@ export class ApiService {
   }
 
   // -------- search ----------
-  searchFoldersByName(userId: string, q: string) {
-    const params = paramsForm({ userId, name_like: q });
+  searchFoldersByName(q: string) {
+    const params = paramsForm({ name_like: q });
     return this.get<Folder[]>(`/folders`, params);
   }
 
-  searchFilesByName(userId: string, q: string) {
-    const params = paramsForm({ userId, name_like: q });
+  searchFilesByName(q: string) {
+    const params = paramsForm({ name_like: q });
     return this.get<FileItem[]>(`/files`, params);
   }
 }

@@ -134,8 +134,8 @@ export class ZipService {
     }
 
     for (const folderId of sel.folderIds ?? []) {
-      await this.walkFolder(String(folderId), sel.userId, async (folder) => {
-        const files = await this.api.listFilesInFolder(sel.userId, folder.id);
+      await this.walkFolder(String(folderId), async (folder) => {
+        const files = await this.api.listFilesInFolder(folder.id);
         for (const f of files) {
           const nf: FileItem = {
             ...f,
@@ -157,7 +157,6 @@ export class ZipService {
 
   private async walkFolder(
     rootId: string,
-    userId: string,
     visit: (f: Folder) => Promise<void>
   ): Promise<void> {
     const root = await this.api.getFolder(rootId);
@@ -172,7 +171,7 @@ export class ZipService {
     const queue: Folder[] = [normRoot];
     while (queue.length) {
       const cur = queue.shift()!;
-      const children = await this.api.listChildrenFolders(userId, cur.id);
+      const children = await this.api.listChildrenFolders(cur.id);
       for (const c of children) {
         const nf: Folder = {
           ...c,
