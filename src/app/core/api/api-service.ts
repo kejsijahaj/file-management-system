@@ -74,6 +74,19 @@ export class ApiService {
     return this.get<Folder[]>(`/folders`, params);
   }
 
+  adminChildrenFolders(
+    parentId: string,
+    sort: keyof Folder = 'name',
+    order: Order = 'asc'
+  ): Promise<Folder[]> {
+    const params = paramsForm({
+      parentId,
+      _sort: sort,
+      _order: order,
+    });
+    return this.get<Folder[]>(`/folders`, params);
+  }
+
   listChildrenFolders(
     userId: string,
     parentId: string,
@@ -146,6 +159,27 @@ export class ApiService {
     return this.get<FileItem[]>(`/files`, params);
   }
 
+  adminFilesInFolder(
+    folderId: string,
+    opts?: {
+      q?: string;
+      sort?: keyof FileItem;
+      order?: Order;
+      page?: number;
+      limit?: number;
+    }
+  ): Promise<FileItem[]> {
+    const params = paramsForm({
+      folderId,
+      name_like: opts?.q,
+      _sort: opts?.sort ?? 'name',
+      _order: opts?.order ?? 'asc',
+      _page: opts?.page,
+      _limit: opts?.limit,
+    });
+    return this.get<FileItem[]>(`/files`, params);
+  }
+
   getFile(id: string): Promise<FileItem> {
     return this.get<FileItem>(`/files/${id}`);
   }
@@ -176,8 +210,18 @@ export class ApiService {
     return this.get<Folder[]>(`/folders`, params);
   }
 
+  adminSearchFoldersByName(q: string) {
+    const params = paramsForm({ name_like: q });
+    return this.get<Folder[]>(`/folders`, params);
+  }
+
   searchFilesByName(userId: string, q: string) {
     const params = paramsForm({ userId, name_like: q });
+    return this.get<FileItem[]>(`/files`, params);
+  }
+
+  adminSearchFilesByName(q: string) {
+    const params = paramsForm({ name_like: q });
     return this.get<FileItem[]>(`/files`, params);
   }
 }

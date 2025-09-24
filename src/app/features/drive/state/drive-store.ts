@@ -30,6 +30,8 @@ export class DriveStore {
   //session
   userId = signal<string>(''); // set after login
   currentFolderId = signal<Id>('0'); // root
+  isAdmin = computed(() => this.auth.getCurrentUser()?.role === 'admin');
+  isUser = computed(() => this.auth.getCurrentUser()?.role === 'user');
 
   //UI
   viewMode = signal<'grid' | 'list'>((localStorage.getItem('viewMode') as any) || 'grid');
@@ -48,14 +50,14 @@ export class DriveStore {
   private nFolder = (f: any): Folder => ({
     ...f,
     id: this.sid(f.id),
-    userId: Number(f.userId),
+    userId: f.userId,
     parentId: this.sid(f.parentId),
   });
 
   private nFile = (f: any): FileItem => ({
     ...f,
     id: this.sid(f.id),
-    userId: Number(f.userId),
+    userId: f.userId,
     folderId: this.sid(f.folderId),
     size: Number(f.size ?? 0),
   });
@@ -101,8 +103,8 @@ export class DriveStore {
 
     effect(() => {
       const u = this.auth.getCurrentUser();
-      this.userId.set(u ? String(u.id) : '')
-    })
+      this.userId.set(u ? String(u.id) : '');
+    });
 
     effect(() => {
       this.currentFolderId();
@@ -120,50 +122,97 @@ export class DriveStore {
     this.loading.set(true);
     this.error.set(null);
     try {
-      this.currentFolderId.set(folderId);
-      const uid = this.userId();
+      if (this.isUser()) {
+        this.currentFolderId.set(folderId);
+        const uid = this.userId();
 
-      // parallel reads
-      const [foldersRaw, filesRaw, pathRaw] = await Promise.all([
-        this.api.listChildrenFolders(uid, folderId),
-        this.api.listFilesInFolder(uid, folderId),
-        folderId === '0' ? Promise.resolve([]) : this.api.getFolderPath(folderId),
-      ]);
+        // parallel reads
+        const [foldersRaw, filesRaw, pathRaw] = await Promise.all([
+          this.api.listChildrenFolders(uid, folderId),
+          this.api.listFilesInFolder(uid, folderId),
+          folderId === '0' ? Promise.resolve([]) : this.api.getFolderPath(folderId),
+        ]);
 
-      const folders = foldersRaw.map(this.nFolder);
-      const files = filesRaw.map(this.nFile);
-      const path = pathRaw.map(this.nFolder);
+        const folders = foldersRaw.map(this.nFolder);
+        const files = filesRaw.map(this.nFile);
+        const path = pathRaw.map(this.nFolder);
 
-      // upsert folders
-      const fMap = new Map(this.foldersById());
-      folders.forEach((f) => fMap.set(f.id, f));
-      this.foldersById.set(fMap);
+        // upsert folders
+        const fMap = new Map(this.foldersById());
+        folders.forEach((f) => fMap.set(f.id, f));
+        this.foldersById.set(fMap);
 
-      // upsert files
-      const fileMap = new Map(this.filesById());
-      files.forEach((f) => fileMap.set(f.id, f));
-      this.filesById.set(fileMap);
+        // upsert files
+        const fileMap = new Map(this.filesById());
+        files.forEach((f) => fileMap.set(f.id, f));
+        this.filesById.set(fileMap);
 
-      // set indexes
-      const childIdx = new Map(this.childrenByParent());
-      childIdx.set(
-        this.currentFolderId(),
-        folders.map((f) => f.id)
-      );
-      this.childrenByParent.set(childIdx);
+        // set indexes
+        const childIdx = new Map(this.childrenByParent());
+        childIdx.set(
+          this.currentFolderId(),
+          folders.map((f) => f.id)
+        );
+        this.childrenByParent.set(childIdx);
 
-      const filesIdx = new Map(this.filesByFolder());
-      filesIdx.set(
-        this.currentFolderId(),
-        files.map((f) => f.id)
-      );
-      this.filesByFolder.set(filesIdx);
+        const filesIdx = new Map(this.filesByFolder());
+        filesIdx.set(
+          this.currentFolderId(),
+          files.map((f) => f.id)
+        );
+        this.filesByFolder.set(filesIdx);
 
-      const s = new Set(this.loadedFolderIds());
-      s.add(String(folderId));
-      this.loadedFolderIds.set(s);
+        const s = new Set(this.loadedFolderIds());
+        s.add(String(folderId));
+        this.loadedFolderIds.set(s);
 
-      this.breadcrumb.set(path);
+        this.breadcrumb.set(path);
+      } else if (this.isAdmin()) {
+        this.currentFolderId.set(folderId);
+        const uid = this.userId();
+
+        // parallel reads
+        const [foldersRaw, filesRaw, pathRaw] = await Promise.all([
+          this.api.adminChildrenFolders(folderId),
+          this.api.adminFilesInFolder(folderId),
+          folderId === '0' ? Promise.resolve([]) : this.api.getFolderPath(folderId),
+        ]);
+
+        const folders = foldersRaw.map(this.nFolder);
+        const files = filesRaw.map(this.nFile);
+        const path = pathRaw.map(this.nFolder);
+
+        // upsert folders
+        const fMap = new Map(this.foldersById());
+        folders.forEach((f) => fMap.set(f.id, f));
+        this.foldersById.set(fMap);
+
+        // upsert files
+        const fileMap = new Map(this.filesById());
+        files.forEach((f) => fileMap.set(f.id, f));
+        this.filesById.set(fileMap);
+
+        // set indexes
+        const childIdx = new Map(this.childrenByParent());
+        childIdx.set(
+          this.currentFolderId(),
+          folders.map((f) => f.id)
+        );
+        this.childrenByParent.set(childIdx);
+
+        const filesIdx = new Map(this.filesByFolder());
+        filesIdx.set(
+          this.currentFolderId(),
+          files.map((f) => f.id)
+        );
+        this.filesByFolder.set(filesIdx);
+
+        const s = new Set(this.loadedFolderIds());
+        s.add(String(folderId));
+        this.loadedFolderIds.set(s);
+
+        this.breadcrumb.set(path);
+      }
     } catch (e: any) {
       this.error.set(e?.message ?? 'Failed to load folder');
     } finally {
@@ -194,46 +243,87 @@ export class DriveStore {
     this.error.set(null);
 
     try {
-      const uid = this.userId();
+      if (this.isUser()) {
+        const uid = this.userId();
 
-      const [folders, files] = await Promise.all([
-        this.api.searchFoldersByName(uid, raw),
-        this.api.searchFilesByName(uid, raw),
-      ]);
+        const [folders, files] = await Promise.all([
+          this.api.searchFoldersByName(uid, raw),
+          this.api.searchFilesByName(uid, raw),
+        ]);
 
-      const qlc = raw.toLowerCase();
-      const foldersFiltered = (folders ?? []).filter((f) => f.name?.toLowerCase().includes(qlc));
-      const filesFiltered = (files ?? []).filter((f) => f.name?.toLowerCase().includes(qlc));
+        const qlc = raw.toLowerCase();
+        const foldersFiltered = (folders ?? []).filter((f) => f.name?.toLowerCase().includes(qlc));
+        const filesFiltered = (files ?? []).filter((f) => f.name?.toLowerCase().includes(qlc));
 
-      const fMap = new Map(this.foldersById());
-      for (const f of foldersFiltered) fMap.set(f.id, f);
-      this.foldersById.set(fMap);
+        const fMap = new Map(this.foldersById());
+        for (const f of foldersFiltered) fMap.set(f.id, f);
+        this.foldersById.set(fMap);
 
-      const fileMap = new Map(this.filesById());
-      for (const f of filesFiltered) fileMap.set(f.id, f);
-      this.filesById.set(fileMap);
+        const fileMap = new Map(this.filesById());
+        for (const f of filesFiltered) fileMap.set(f.id, f);
+        this.filesById.set(fileMap);
 
-      const hits: SearchHit[] = [
-        ...foldersFiltered.map((f) => ({
-          kind: 'folder' as const,
-          id: f.id,
-          name: f.name,
-          parentId: f.parentId,
-        })),
-        ...filesFiltered.map((f) => ({
-          kind: 'file' as const,
-          id: f.id,
-          name: f.name,
-          folderId: f.folderId,
-          parentId: f.folderId,
-          mime: f.mime,
-          size: f.size,
-          updatedAt: f.updatedAt,
-        })),
-      ];
+        const hits: SearchHit[] = [
+          ...foldersFiltered.map((f) => ({
+            kind: 'folder' as const,
+            id: f.id,
+            name: f.name,
+            parentId: f.parentId,
+          })),
+          ...filesFiltered.map((f) => ({
+            kind: 'file' as const,
+            id: f.id,
+            name: f.name,
+            folderId: f.folderId,
+            parentId: f.folderId,
+            mime: f.mime,
+            size: f.size,
+            updatedAt: f.updatedAt,
+          })),
+        ];
 
-      this.searchResults.set(hits);
-      this.searchMode.set(true);
+        this.searchResults.set(hits);
+        this.searchMode.set(true);
+      } else if (this.isAdmin()) {
+        const [folders, files] = await Promise.all([
+          this.api.adminSearchFoldersByName(raw),
+          this.api.adminSearchFilesByName(raw),
+        ]);
+
+        const qlc = raw.toLowerCase();
+        const foldersFiltered = (folders ?? []).filter((f) => f.name?.toLowerCase().includes(qlc));
+        const filesFiltered = (files ?? []).filter((f) => f.name?.toLowerCase().includes(qlc));
+
+        const fMap = new Map(this.foldersById());
+        for (const f of foldersFiltered) fMap.set(f.id, f);
+        this.foldersById.set(fMap);
+
+        const fileMap = new Map(this.filesById());
+        for (const f of filesFiltered) fileMap.set(f.id, f);
+        this.filesById.set(fileMap);
+
+        const hits: SearchHit[] = [
+          ...foldersFiltered.map((f) => ({
+            kind: 'folder' as const,
+            id: f.id,
+            name: f.name,
+            parentId: f.parentId,
+          })),
+          ...filesFiltered.map((f) => ({
+            kind: 'file' as const,
+            id: f.id,
+            name: f.name,
+            folderId: f.folderId,
+            parentId: f.folderId,
+            mime: f.mime,
+            size: f.size,
+            updatedAt: f.updatedAt,
+          })),
+        ];
+
+        this.searchResults.set(hits);
+        this.searchMode.set(true);
+      }
     } catch (e: any) {
       this.error.set(e?.message ?? 'Failed to search');
     } finally {
@@ -271,18 +361,6 @@ export class DriveStore {
     const idx = new Map(this.filesByFolder());
     const arr = (idx.get(key) ?? []).filter((id) => id !== fileId);
     idx.set(key, arr);
-    this.filesByFolder.set(idx);
-  }
-
-  private _setFilesFor(folderId: Id, files: FileItem[]) {
-    const map = new Map(this.filesById());
-    for (const f of files) map.set(f.id, f);
-    this.filesById.set(map);
-    const idx = new Map(this.filesByFolder());
-    idx.set(
-      folderId,
-      files.map((f) => f.id)
-    );
     this.filesByFolder.set(idx);
   }
 
