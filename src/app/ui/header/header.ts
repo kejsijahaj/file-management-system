@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth/auth-service';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { Dashboard } from '../dashboard/dashboard';
+import { AdminSettings } from '../admin-settings/admin-settings';
 
 @Component({
   selector: 'app-header',
@@ -19,6 +20,9 @@ export class Header {
   private dialog = inject(MatDialog);
   displayName = this.auth.displayName;
 
+  isAdmin = computed(() => this.auth.getCurrentUser()?.role === 'admin');
+  isUser = computed(() => this.auth.getCurrentUser()?.role === 'user');
+
   logOut() {
     this.auth.logout();
     this.router.navigate(['/login']);
@@ -26,6 +30,16 @@ export class Header {
 
   userDashboard() {
     this.dialog.open(Dashboard, {
+      width: '1000px',
+      maxWidth: '1500px',
+      height: '600px',
+      disableClose: false,
+    })
+    console.log('current user', this.auth.getCurrentUser());
+  }
+
+  adminSettings() {
+    this.dialog.open(AdminSettings, {
       width: '1000px',
       maxWidth: '1500px',
       height: '600px',

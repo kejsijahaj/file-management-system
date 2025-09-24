@@ -6,7 +6,11 @@
     </button>
 
     <mat-menu #userMenu="matMenu" class="user-menu">
+      @if (isAdmin()) {
+      <button mat-menu-item (click)="adminSettings()">Admin Settings</button>
+      } @else if (isUser()) {
       <button mat-menu-item (click)="userDashboard()">Dashboard</button>
+      }
       <button mat-menu-item (click)="logOut()">Logout</button>
     </mat-menu>
   </div>
