@@ -48,14 +48,14 @@ export class DriveStore {
   private nFolder = (f: any): Folder => ({
     ...f,
     id: this.sid(f.id),
-    userId: Number(f.userId),
+    userId: f.userId,
     parentId: this.sid(f.parentId),
   });
 
   private nFile = (f: any): FileItem => ({
     ...f,
     id: this.sid(f.id),
-    userId: Number(f.userId),
+    userId: f.userId,
     folderId: this.sid(f.folderId),
     size: Number(f.size ?? 0),
   });
