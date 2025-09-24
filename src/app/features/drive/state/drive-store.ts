@@ -76,7 +76,6 @@ export class DriveStore {
   localFilter = signal<string>('');
 
   currentFiles = computed(() => {
-    // console.log(this.currentFolderId(), 'insideCompute');
     const ids = this.filesByFolder().get(this.currentFolderId()) || [];
     const byId = this.filesById();
     let rows = ids.map((id) => byId.get(id)!).filter(Boolean);
@@ -132,7 +131,6 @@ export class DriveStore {
           this.api.listFilesInFolder(uid, folderId),
           folderId === '0' ? Promise.resolve([]) : this.api.getFolderPath(folderId),
         ]);
-
         const folders = foldersRaw.map(this.nFolder);
         const files = filesRaw.map(this.nFile);
         const path = pathRaw.map(this.nFolder);
@@ -807,8 +805,8 @@ export class DriveStore {
 
     const uid = this.userId();
     const [folders, files] = await Promise.all([
-      this.api.listChildrenFolders(uid, folderId),
-      this.api.listFilesInFolder(uid, folderId),
+      this.api.listChildrenFolders( uid, folderId),
+      this.api.listFilesInFolder( uid, folderId),
     ]);
 
     const fMap = new Map(this.foldersById());
@@ -837,8 +835,8 @@ export class DriveStore {
   private async refreshFolderFromServer(folderId: Id) {
     const uid = this.userId();
     const [folders, files] = await Promise.all([
-      this.api.listChildrenFolders(uid, folderId),
-      this.api.listFilesInFolder(uid, folderId),
+      this.api.listChildrenFolders( uid, folderId),
+      this.api.listFilesInFolder( uid, folderId),
     ]);
 
     const fMap = new Map(this.foldersById());
