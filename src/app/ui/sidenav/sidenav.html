@@ -5,6 +5,7 @@
   </button>
 
   <mat-menu #createMenu="matMenu">
+    @if (perm.canUpload()) {
     <button mat-menu-item (click)="openCreateDialog('folder')">
       <mat-icon>create_new_folder</mat-icon>
       <span>New Folder</span>
@@ -13,6 +14,12 @@
       <mat-icon>note_add</mat-icon>
       <span>Upload File</span>
     </button>
+    } @else {
+      <button mat-menu-item disabled>
+        <mat-icon>block</mat-icon>
+        <span>No actions available.</span>
+      </button>
+    }
   </mat-menu>
 
   <input #fileInput type="file" style="display: none" (change)="onFilesPicked($event)" multiple />
@@ -31,18 +38,21 @@
       <span (click)="openFolder('0'); $event.stopPropagation()">Home</span>
 
       @if (isLoading('0')) {
-        <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+      <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
       }
     </button>
   </div>
 
   <!-- Root children -->
   @if (isExpanded('0')) {
-    <div class="children root-children">
-      @for (child of childrenOf('0'); track trackNode(i, child); let i = $index) {
-        <ng-container [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ $implicit: child }"></ng-container>
-      }
-    </div>
+  <div class="children root-children">
+    @for (child of childrenOf('0'); track trackNode(i, child); let i = $index) {
+    <ng-container
+      [ngTemplateOutlet]="renderNode"
+      [ngTemplateOutletContext]="{ $implicit: child }"
+    ></ng-container>
+    }
+  </div>
   }
 </div>
 
@@ -50,35 +60,37 @@
 <ng-template #renderNode let-node>
   <div class="node-row" [class.file]="node.type === 'file'">
     @if (node.type === 'folder') {
-      <button
-        mat-button
-        type="button"
-        class="folder-btn"
-        [attr.aria-expanded]="isExpanded(node.id)"
-        (click)="toggleFolder(node.id)"
-      >
-        <mat-icon class="chev">{{ isExpanded(node.id) ? 'expand_more' : 'chevron_right' }}</mat-icon>
-        <mat-icon class="folder-icon">folder</mat-icon>
-        <span (click)="openFolder(node.id); $event.stopPropagation()">{{ node.name }}</span>
+    <button
+      mat-button
+      type="button"
+      class="folder-btn"
+      [attr.aria-expanded]="isExpanded(node.id)"
+      (click)="toggleFolder(node.id)"
+    >
+      <mat-icon class="chev">{{ isExpanded(node.id) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+      <mat-icon class="folder-icon">folder</mat-icon>
+      <span (click)="openFolder(node.id); $event.stopPropagation()">{{ node.name }}</span>
 
-        @if (isLoading(node.id)) {
-          <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
-        }
-      </button>
-
-      @if (isExpanded(node.id)) {
-        <div class="children">
-          @for (child of childrenOf(node.id); track trackNode(i, child); let i = $index) {
-            <ng-container [ngTemplateOutlet]="renderNode" [ngTemplateOutletContext]="{ $implicit: child }"></ng-container>
-          }
-        </div>
+      @if (isLoading(node.id)) {
+      <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
       }
-    } @else {
-      <button mat-button type="button" class="file-btn" (click)="openFolder(node.id)">
-        <span class="chev-spacer"></span>
-        <mat-icon class="file-icon">insert_drive_file</mat-icon>
-        <span class="file-name">{{ node.name }}</span>
-      </button>
+    </button>
+
+    @if (isExpanded(node.id)) {
+    <div class="children">
+      @for (child of childrenOf(node.id); track trackNode(i, child); let i = $index) {
+      <ng-container
+        [ngTemplateOutlet]="renderNode"
+        [ngTemplateOutletContext]="{ $implicit: child }"
+      ></ng-container>
+      }
+    </div>
+    } } @else {
+    <button mat-button type="button" class="file-btn" (click)="openFolder(node.id)">
+      <span class="chev-spacer"></span>
+      <mat-icon class="file-icon">insert_drive_file</mat-icon>
+      <span class="file-name">{{ node.name }}</span>
+    </button>
     }
   </div>
 </ng-template>

@@ -9,14 +9,16 @@
   <div class="batch-toolbar">
     <span>{{ store.selectedCount() }} selected</span>
 
-    @if (!store.movePicking()) {
+    @if (!store.movePicking() || this.perm.canMoveFile() || this.perm.canMoveFolder()) {
     <button (click)="store.startMovePick()" class="btn">Move</button>
     } @else {
     <strong class="hint">{{ store.moveHint() }}</strong>
     <button (click)="store.cancelMovePick()">Cancel</button>
     }
 
-    <button (click)="onDeleteSelected()" class="btn">Delete</button>
+    @if (this.perm.canDeleteFile() || this.perm.canDeleteFolder()) {
+      <button (click)="onDeleteSelected()" class="btn">Delete</button>
+    }
     <button (click)="onDownloadSelected()" class="btn">Download</button>
     <button (click)="store.selectAllVisible()" class="btn">Select All</button>
     <button (click)="store.clearSelection()" class="btn">Clear</button>
@@ -172,12 +174,12 @@
       <button
         class="delete-button"
         mat-icon-button
-        [disabled]="!perm.canEditFolder(f)"
+        [disabled]="!perm.canDeleteFolder(f)"
         (click)="onDeleteFolder(f.id); $event.stopPropagation()"
       >
         <mat-icon>delete</mat-icon>
       </button>
-      <button class="edit-button" mat-icon-button (click)="onEditFolder(f)" [disabled]="!perm.canEditFolder(f)">
+      <button class="edit-button" mat-icon-button (click)="onEditFolder(f)" [disabled]="!perm.canRenameFolder(f)">
         <mat-icon>edit</mat-icon>
       </button>
     </div>
@@ -206,12 +208,12 @@
       <button
         class="delete-button"
         mat-icon-button
-        [disabled]="!perm.canEditFile(fl)"
+        [disabled]="!perm.canDeleteFile(fl)"
         (click)="onDeleteFile(fl.id, fl.name); $event.stopPropagation()"
       >
         <mat-icon>delete</mat-icon>
       </button>
-      <button class="edit-button" mat-icon-button (click)="onEditFile(fl)" [disabled]="!perm.canEditFile(fl)">
+      <button class="edit-button" mat-icon-button (click)="onEditFile(fl)" [disabled]="!perm.canRenameFile(fl)">
         <mat-icon>edit</mat-icon>
       </button>
     </div>

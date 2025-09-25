@@ -146,13 +146,17 @@ export class Content {
     const file = this.store.filesById().get(id);
     if (!file) return;
 
-    this.dialog.open(FilePreviewDialog, {
-      data: { file },
-      panelClass: 'preview-dialog',
-      width: '80vw',
-      maxWidth: '80vw',
-      height: '80vh',
-    });
+    if (this.perm.canReadFile(file)) {
+      this.dialog.open(FilePreviewDialog, {
+        data: { file },
+        panelClass: 'preview-dialog',
+        width: '80vw',
+        maxWidth: '80vw',
+        height: '80vh',
+      });
+    } else {
+      this.snackbar.open('You do not have permission to view this file.', 'Close', { duration: 3000 });
+    }
   }
 
   // drag and drop handlers
@@ -163,11 +167,11 @@ export class Content {
   ): Promise<boolean> {
     if (item.type === 'file') {
       const file = this.store.filesById().get(item.id);
-      if (!this.store['perm'].canEditFile(file)) return false;
+      if (!this.store['perm'].canMoveFile(file)) return false;
       return true;
     } else {
       const folder = this.store.foldersById().get(item.id);
-      if (!this.store['perm'].canEditFolder(folder)) return false;
+      if (!this.store['perm'].canMoveFolder(folder)) return false;
       const invalid = await this.store.isInvalidFolderMoveSingle(item.id, targetId);
       return !invalid;
     }

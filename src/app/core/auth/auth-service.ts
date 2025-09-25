@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { computed, Injectable, signal } from "@angular/core";
-import { User, NewUser } from "../../shared/models/user-model";
+import { User, NewUser, Permission } from "../../shared/models/user-model";
 import { firstValueFrom } from "rxjs";
 import { MatSnackBar } from "@angular/material/snack-bar";
 
@@ -116,5 +116,34 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  // admin: user list & management
+  async listAllUsers(): Promise<User[]> {
+    return await firstValueFrom(this.http.get<User[]>(this.apiUrl));
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await firstValueFrom(this.http.delete<void>(`${this.apiUrl}/${id}`));
+  }
+
+  // admin: permissions
+  async setUserPermissions(id: string, permissions: Permission[]): Promise<User> {
+    return await firstValueFrom(this.http.patch<User>(`${this.apiUrl}/${id}`, {permissions}));
+  }
+
+  async toggleUserPermission(id: string, perm: Permission): Promise<User> {
+    const user = await firstValueFrom(this.http.get<User>(`${this.apiUrl}/${id}`));
+    const current = new Set(user.permissions ?? []);
+    if (current.has(perm)) current.delete(perm);
+    else current.add(perm);
+    return await this.setUserPermissions(id, [...current]);
+  }
+
+  // util
+  hasPermission(user: User | null, perm: Permission): boolean {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    return (user.permissions ?? []).includes(perm);
   }
 }

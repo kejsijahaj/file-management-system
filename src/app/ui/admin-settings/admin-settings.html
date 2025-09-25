@@ -1,1 +1,63 @@
-<p>admin-settings works!</p>
+<div class="dialog-root">
+    <header class="head">
+        <h2>Admin Settings</h2>
+        <button mat-icon-button (click)="close()">
+            <mat-icon>close</mat-icon>
+        </button>
+    </header>
+
+    @if (loading()) {
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <section class="list">
+        <div class="list-head">
+            <div class="col user">User</div>
+            <div class="col email hide-sm">Email</div>
+            <div class="col role">Role</div>
+            <div class="col actions"></div>
+        </div>
+        <mat-divider></mat-divider>
+
+        <mat-accordion class="users-accordion" multi>
+            @for (u of users(); track u.id) {
+                <mat-expansion-panel class="user-panel">
+                    <mat-expansion-panel-header>
+                        <div class="row">
+                            <div class="col user">
+                                <div class="avatar">{{initials(u.username)}}</div>
+                                <div class="name"> {{u.username}}</div>
+                            </div>
+
+                            <div class="col email hide-sm">{{u.email}}</div>
+
+                            <div class="col role">
+                                <span class="chip" [class.admin]="u.role === 'admin'"> {{u.role}} </span>
+                            </div>
+
+                            <div class="col actions">
+                                <button mat-icon-button color="warn" (click)="remove(u)" [disabled]="u.role === 'admin'">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </mat-expansion-panel-header>
+
+                    <div class="perms">
+                        @for (p of allPerms; track p) {
+                            <div class="perm-row">
+                                <div class="perm-name">{{p}}</div>
+                                <mat-slide-toggle [checked]="has(u, p)" (change)="toggle(u, p, $event.checked)" [disabled]="u.role === 'admin'"></mat-slide-toggle>
+                            </div>
+                        }
+                    </div>
+                </mat-expansion-panel>
+            }
+        </mat-accordion>
+    </section>
+
+    <footer class="foot">
+        <span class="spacer"></span>
+        <button mat-stroked-button (click)="close()">Close</button>
+    </footer>
+</div>

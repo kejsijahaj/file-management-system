@@ -392,7 +392,7 @@ export class DriveStore {
 
   async renameFolder(id: Id, name: string) {
     const f = this.foldersById().get(id);
-    if (!this.perm.canEditFolder(f)) {
+    if (!this.perm.canRenameFolder(f)) {
       this.snackbar.open('You do not have permission to rename this folder.', 'Close', {
         duration: 3000,
       });
@@ -409,7 +409,7 @@ export class DriveStore {
 
   async moveFolder(id: Id, targetParentId: Id) {
     const old = this.foldersById().get(id);
-    if (!this.perm.canEditFolder(old)) {
+    if (!this.perm.canMoveFolder(old)) {
       this.snackbar.open('You do not have permission to move this folder.', 'Close', {
         duration: 3000,
       });
@@ -426,7 +426,7 @@ export class DriveStore {
 
   async deleteFolderFlow(id: Id) {
     const f = this.foldersById().get(id);
-    if (!this.perm.canEditFolder(f)) {
+    if (!this.perm.canDeleteFolder(f)) {
       this.snackbar.open('You do not have permission to delete this folder.', 'Close', {
         duration: 3000,
       });
@@ -471,7 +471,7 @@ export class DriveStore {
   async cascadeDeleteFolder(rootId: Id) {
     const uid = this.userId();
     const root = this.foldersById().get(rootId);
-    if (!this.perm.canEditFolder(root)) {
+    if (!this.perm.canDeleteFolder(root)) {
       this.snackbar.open('You do not have permission to delete this folder.', 'Close', {
         duration: 3000,
       });
@@ -582,28 +582,35 @@ export class DriveStore {
   }
 
   async uploadFile(file: File) {
-    const now = new Date().toISOString();
-    const dataUrl = await this.fileToDataUrl(file);
-    const body: Omit<FileItem, 'id'> = {
-      userId: this.userId(),
-      folderId: this.currentFolderId(), // string
-      name: file.name,
-      mime: file.type,
-      size: file.size,
-      url: dataUrl,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const created = this.nFile(await this.api.createFile(body));
-    const map = new Map(this.filesById());
-    map.set(created.id, created);
-    this.filesById.set(map);
-    this._addFileIndex(created.folderId, created.id);
+    if (!this.perm.canUpload()) {
+      this.snackbar.open('You do not have permission to upload files.', 'Close', {
+        duration: 3000,
+      });
+      throw new Error('No permission to upload file');
+    } else {
+      const now = new Date().toISOString();
+      const dataUrl = await this.fileToDataUrl(file);
+      const body: Omit<FileItem, 'id'> = {
+        userId: this.userId(),
+        folderId: this.currentFolderId(), // string
+        name: file.name,
+        mime: file.type,
+        size: file.size,
+        url: dataUrl,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const created = this.nFile(await this.api.createFile(body));
+      const map = new Map(this.filesById());
+      map.set(created.id, created);
+      this.filesById.set(map);
+      this._addFileIndex(created.folderId, created.id);
+    }
   }
 
   async renameFile(id: Id, newName: string) {
     const file = this.filesById().get(id);
-    if (!this.perm.canEditFile(file)) {
+    if (!this.perm.canRenameFile(file)) {
       this.snackbar.open('You do not have permission to rename this file.', 'Close', {
         duration: 3000,
       });
@@ -620,7 +627,7 @@ export class DriveStore {
 
   async moveFile(id: Id, targetFolderId: Id) {
     const old = this.filesById().get(id);
-    if (!this.perm.canEditFile(old)) {
+    if (!this.perm.canMoveFile(old)) {
       this.snackbar.open('You do not have permission to move this file.', 'Close', {
         duration: 3000,
       });
@@ -637,7 +644,7 @@ export class DriveStore {
 
   async deleteFile(id: Id) {
     const file = this.filesById().get(id);
-    if (!this.perm.canEditFile(file)) {
+    if (!this.perm.canDeleteFile(file)) {
       this.snackbar.open('You do not have permission to delete this file.', 'Close', {
         duration: 3000,
       });
@@ -707,10 +714,10 @@ export class DriveStore {
     this.error.set(null);
     try {
       const allowedFileIds = [...this.selectedFileIds()].filter((id) =>
-        this.perm.canEditFile(this.filesById().get(id))
+        this.perm.canDeleteFile(this.filesById().get(id))
       );
       const allowedFolderIds = [...this.selectedFolderIds()].filter((id) =>
-        this.perm.canEditFolder(this.foldersById().get(id))
+        this.perm.canDeleteFolder(this.foldersById().get(id))
       );
 
       const skipped = this.selectedCount() - (allowedFileIds.length + allowedFolderIds.length);
@@ -805,8 +812,8 @@ export class DriveStore {
 
     const uid = this.userId();
     const [folders, files] = await Promise.all([
-      this.api.listChildrenFolders( uid, folderId),
-      this.api.listFilesInFolder( uid, folderId),
+      this.api.listChildrenFolders(uid, folderId),
+      this.api.listFilesInFolder(uid, folderId),
     ]);
 
     const fMap = new Map(this.foldersById());
@@ -835,8 +842,8 @@ export class DriveStore {
   private async refreshFolderFromServer(folderId: Id) {
     const uid = this.userId();
     const [folders, files] = await Promise.all([
-      this.api.listChildrenFolders( uid, folderId),
-      this.api.listFilesInFolder( uid, folderId),
+      this.api.listChildrenFolders(uid, folderId),
+      this.api.listFilesInFolder(uid, folderId),
     ]);
 
     const fMap = new Map(this.foldersById());

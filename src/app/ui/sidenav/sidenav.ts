@@ -12,6 +12,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { DriveStore } from '../../features/drive/state/drive-store';
 import { UnzipService } from '../../shared/services/unzip-service';
 import { NameDialog, NameDialogData } from '../../shared/components/name-dialog/name-dialog';
+import { PermissionService } from '../../features/drive/permission-service';
 
 type NodeType = 'folder' | 'file';
 interface NodeItem {
@@ -41,6 +42,9 @@ export class Sidenav {
   private snackbar = inject(MatSnackBar);
   private unzip = inject(UnzipService);
   store = inject(DriveStore);
+  perm = inject(PermissionService)
+
+  canUpload = () => this.perm.canUpload();
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 

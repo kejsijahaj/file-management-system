@@ -44,6 +44,7 @@ export class Header {
       maxWidth: '1500px',
       height: '600px',
       disableClose: false,
+      panelClass: 'admin-settings-dialog'
     })
   }
 

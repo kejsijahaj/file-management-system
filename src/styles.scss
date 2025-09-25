@@ -37,3 +37,8 @@ body {
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+.admin-settings-dialog .mdc-dialog__surface {
+  width: 1500px !important;
+  max-width: 1050px !important;
+}
