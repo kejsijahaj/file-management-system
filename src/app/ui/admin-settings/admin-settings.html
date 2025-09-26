@@ -1,58 +1,170 @@
 <div class="dialog-root">
-    <header class="head">
-        <h2>Admin Settings</h2>
-        <button mat-icon-button (click)="close()">
-            <mat-icon>close</mat-icon>
+  <header class="head">
+    <h2>Admin Settings</h2>
+    <button mat-icon-button (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  @if (loading()) {
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <mat-tab-group>
+    <mat-tab label="Account Settings">
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="form-section">
+        <h3 class="form-title">Profile</h3>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Username</mat-label>
+          <input matInput formControlName="username" />
+          @if (profileForm.get('username')?.hasError('required')) {
+          <mat-error>Required</mat-error>
+          } @if (profileForm.get('username')?.hasError('pattern')) {
+          <mat-error>Letters & numbers only</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" />
+          @if (profileForm.get('email')?.hasError('required')) {
+          <mat-error>Required</mat-error>
+          } @if (profileForm.get('email')?.hasError('email')) {
+          <mat-error>Not a valid email</mat-error>
+          }
+        </mat-form-field>
+
+        <button
+          class="full-width"
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="loading()"
+        >
+          Save Profile
         </button>
-    </header>
+      </form>
 
-    @if (loading()) {
-        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-    }
+      <hr />
 
-    <section class="list">
+      <!-- Password form -->
+      <form [formGroup]="passwordForm" (ngSubmit)="savePassword()" class="form-section">
+        <h3 class="form-title">Change Password</h3>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Current Password</mat-label>
+          <input
+            matInput
+            [type]="showPw() ? 'text' : 'password'"
+            formControlName="currentPassword"
+          />
+          <button mat-icon-button matSuffix type="button" (click)="showPw.set(!showPw())">
+            <mat-icon>{{ showPw() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>New Password</mat-label>
+          <input
+            matInput
+            [type]="showNewPw() ? 'text' : 'password'"
+            formControlName="newPassword"
+          />
+          <button mat-icon-button matSuffix type="button" (click)="showNewPw.set(!showNewPw())">
+            <mat-icon>{{ showNewPw() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (passwordForm.get('newPassword')?.hasError('weak')) {
+          <mat-hint>Use upper, lower, and a number.</mat-hint>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Confirm New Password</mat-label>
+          <input
+            matInput
+            [type]="showConfirmPw() ? 'text' : 'password'"
+            formControlName="confirmPassword"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="showConfirmPw.set(!showConfirmPw())"
+          >
+            <mat-icon>{{ showConfirmPw() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (passwordForm.hasError('mismatch')) {
+          <mat-error>Passwords do not match</mat-error>
+          }
+        </mat-form-field>
+
+        <button
+          class="full-width"
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="loading()"
+        >
+          Update Password
+        </button>
+      </form>
+    </mat-tab>
+    <mat-tab label="User Permissions">
+      <section class="list">
         <div class="list-head">
-            <div class="col user">User</div>
-            <div class="col email hide-sm">Email</div>
-            <div class="col role">Role</div>
-            <div class="col actions"></div>
+          <div class="col user">User</div>
+          <div class="col email hide-sm">Email</div>
+          <div class="col role">Role</div>
+          <div class="col actions"></div>
         </div>
         <mat-divider></mat-divider>
 
         <mat-accordion class="users-accordion" multi>
-            @for (u of users(); track u.id) {
-                <mat-expansion-panel class="user-panel">
-                    <mat-expansion-panel-header>
-                        <div class="row">
-                            <div class="col user">
-                                <div class="avatar">{{initials(u.username)}}</div>
-                                <div class="name"> {{u.username}}</div>
-                            </div>
+          @for (u of users(); track u.id) {
+          <mat-expansion-panel class="user-panel">
+            <mat-expansion-panel-header>
+              <div class="row">
+                <div class="col user">
+                  <div class="avatar">{{ initials(u.username) }}</div>
+                  <div class="name">{{ u.username }}</div>
+                </div>
 
-                            <div class="col email hide-sm">{{u.email}}</div>
+                <div class="col email hide-sm">{{ u.email }}</div>
 
-                            <div class="col role">
-                                <span class="chip" [class.admin]="u.role === 'admin'"> {{u.role}} </span>
-                            </div>
+                <div class="col role">
+                  <span class="chip" [class.admin]="u.role === 'admin'"> {{ u.role }} </span>
+                </div>
 
-                            <div class="col actions">
-                                <button mat-icon-button color="warn" (click)="remove(u)" [disabled]="u.role === 'admin'">
-                                    <mat-icon>delete</mat-icon>
-                                </button>
-                            </div>
-                        </div>
-                    </mat-expansion-panel-header>
+                <div class="col actions">
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    (click)="remove(u)"
+                    [disabled]="u.role === 'admin'"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </mat-expansion-panel-header>
 
-                    <div class="perms">
-                        @for (p of allPerms; track p) {
-                            <div class="perm-row">
-                                <div class="perm-name">{{p}}</div>
-                                <mat-slide-toggle [checked]="has(u, p)" (change)="toggle(u, p, $event.checked)" [disabled]="u.role === 'admin'"></mat-slide-toggle>
-                            </div>
-                        }
-                    </div>
-                </mat-expansion-panel>
-            }
+            <div class="perms">
+              @for (p of allPerms; track p) {
+              <div class="perm-row">
+                <div class="perm-name">{{ p }}</div>
+                <mat-slide-toggle
+                  [checked]="has(u, p)"
+                  (change)="toggle(u, p, $event.checked)"
+                  [disabled]="u.role === 'admin'"
+                ></mat-slide-toggle>
+              </div>
+              }
+            </div>
+          </mat-expansion-panel>
+          }
         </mat-accordion>
-    </section>
+      </section>
+    </mat-tab>
+  </mat-tab-group>
 </div>
