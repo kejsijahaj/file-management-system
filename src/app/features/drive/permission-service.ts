@@ -24,6 +24,10 @@ export class PermissionService {
         return this.has('upload');
     }
 
+    canAddFolder(): boolean {
+        return this.has('add_folder');
+    }
+
     canRenameFile(file?: FileItem): boolean {
         const u = this.auth.getCurrentUser();
         if (!u || !file) return false;

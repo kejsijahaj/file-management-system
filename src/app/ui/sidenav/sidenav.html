@@ -6,19 +6,20 @@
 
   <mat-menu #createMenu="matMenu">
     @if (perm.canUpload()) {
-    <button mat-menu-item (click)="openCreateDialog('folder')">
-      <mat-icon>create_new_folder</mat-icon>
-      <span>New Folder</span>
-    </button>
     <button mat-menu-item (click)="openFilePicker()">
       <mat-icon>note_add</mat-icon>
       <span>Upload File</span>
     </button>
+    } @else if (perm.canAddFolder()) {
+    <button mat-menu-item (click)="openCreateDialog('folder')">
+      <mat-icon>create_new_folder</mat-icon>
+      <span>New Folder</span>
+    </button>
     } @else {
-      <button mat-menu-item disabled>
-        <mat-icon>block</mat-icon>
-        <span>No actions available.</span>
-      </button>
+    <button mat-menu-item disabled>
+      <mat-icon>block</mat-icon>
+      <span>No actions available.</span>
+    </button>
     }
   </mat-menu>
 

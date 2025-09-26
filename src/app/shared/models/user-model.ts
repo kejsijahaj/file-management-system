@@ -5,6 +5,7 @@ export type Permission =
 | 'rename'
 | 'move'
 | 'read'
+| 'add_folder'
 | 'delete';
 
 export interface User {

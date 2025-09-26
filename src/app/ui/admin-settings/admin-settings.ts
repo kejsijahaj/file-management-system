@@ -12,7 +12,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonModule } from '@angular/material/button';
 
-const ALL_PERMS: Permission[] = ['upload', 'rename', 'move', 'read', 'delete'];
+const ALL_PERMS: Permission[] = ['upload', 'rename', 'move', 'read', 'delete', 'add_folder'];
 
 @Component({
   selector: 'app-admin-settings',
