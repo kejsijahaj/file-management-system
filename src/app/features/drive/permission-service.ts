@@ -25,7 +25,6 @@ export class PermissionService {
     }
 
     canAddFolder(): boolean {
-        console.log(this.has('add_folder'));
         return this.has('add_folder');
     }
 
