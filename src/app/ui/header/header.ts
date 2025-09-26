@@ -35,7 +35,6 @@ export class Header {
       height: '600px',
       disableClose: false,
     })
-    console.log('current user', this.auth.getCurrentUser());
   }
 
   adminSettings() {

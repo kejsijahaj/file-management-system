@@ -117,7 +117,6 @@ export class DriveStore {
   loadedFolderIds = signal<Set<string>>(new Set());
 
   async load(folderId: Id = this.currentFolderId()) {
-    console.log(this.currentFolderId(), 'current');
     this.loading.set(true);
     this.error.set(null);
     try {
