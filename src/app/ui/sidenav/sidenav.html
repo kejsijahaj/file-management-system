@@ -10,7 +10,7 @@
       <mat-icon>note_add</mat-icon>
       <span>Upload File</span>
     </button>
-    } @else if (perm.canAddFolder()) {
+    } @if (perm.canAddFolder()) {
     <button mat-menu-item (click)="openCreateDialog('folder')">
       <mat-icon>create_new_folder</mat-icon>
       <span>New Folder</span>
@@ -18,7 +18,7 @@
     } @else {
     <button mat-menu-item disabled>
       <mat-icon>block</mat-icon>
-      <span>No actions available.</span>
+      <span>No permission to add</span>
     </button>
     }
   </mat-menu>
